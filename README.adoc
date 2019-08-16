@@ -19,19 +19,19 @@
 * F#
 
 == 组件
-[cols="1,3a", options="header"]
+[cols="1a,3a", options="header"]
 |===
 |名称
 |简介
 
-|
+|[%hardbreaks]
 LogStore.Common
 LogStore.Common.Tests
-|
-[%hardbreaks]
+|[%hardbreaks]
 一些公共的功能，包括：
 1、异步并发资源池
-|
+
+|[%hardbreaks]
 LogStore.Core
 LogStore.Core.Tests
 |
