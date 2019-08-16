@@ -1,0 +1,12 @@
+source https://www.nuget.org/api/v2
+
+framework: netcoreapp22
+nuget FSharp.Core
+nuget Logary
+nuget Expecto
+nuget Expecto.BenchmarkDotNet
+nuget Expecto.FsCheck
+nuget Expecto.Hopac
+
+group Build
+  source https://www.nuget.org/api/v2

@@ -1,0 +1,30 @@
+{
+    // 使用 IntelliSense 了解相关属性。
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "LogStore.Common.Tests",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build LogStore.Common.Tests",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/LogStore.Common.Tests/",
+            "program": "bin/Debug/netcoreapp2.2/LogStore.Common.Tests.dll",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        },
+        {
+            "name": "LogStore.Core.Tests",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build LogStore.Core.Tests",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/LogStore.Core.Tests/",
+            "program": "bin/Debug/netcoreapp2.2/LogStore.Core.Tests.dll",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        }
+    ]
+}

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\LogStore.Common\LogStore.Common.fsproj">
+      <Name>LogStore.Common.fsproj</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Utils/ValResourceTests.fs" />
+    <Compile Include="Utils/RefResourceTests.fs" />
+    <Compile Include="Main.fs" />
+    <None Include="paket.references" />
+  </ItemGroup>
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+</Project>
