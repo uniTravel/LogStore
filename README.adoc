@@ -1,8 +1,7 @@
-:icons: font
-
 = LogStore
+:icons: font
 :toc:
-:toc-title: 目录
+:toc-title:
 
 ****
 [.lead]
