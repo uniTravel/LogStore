@@ -1,0 +1,42 @@
+:icons: font
+
+= LogStore
+:toc:
+:toc-title: 目录
+
+****
+[.lead]
+以流的方式记录、访问数据。可靠、高效的流存储能最有效地支撑以下设计方式：
+
+* EDA（事件驱动架构）
+* CQRS（命令查询职责分离）
+****
+
+
+== 环境
+目标框架::
+* .NET Core 2.2
+开发语言::
+* F#
+
+== 组件
+[cols="1,3a", options="header"]
+|===
+|名称
+|简介
+
+|
+LogStore.Common
+LogStore.Common.Tests
+|
+[%hardbreaks]
+一些公共的功能，包括：
+1、异步并发资源池
+|
+LogStore.Core
+LogStore.Core.Tests
+|
+LogStore内核，以Chunk文件存储数据。
+|===
+[CAUTION]
+利用 `.fsi` 签名文件，F#可以方便地实现良好的代码封装。
