@@ -154,6 +154,8 @@ module Chunk =
         { ChunkHeader = ch; OriginStream = os; ChunkFooter = cf }
 
     let create (cfg: ChunkConfig) : unit =
+        if Directory.Exists cfg.Path |> not then failwithf "文件夹%s不存在。" cfg.Path
+        if (Directory.GetFiles cfg.Path).Length <> 0 then failwith "Chunk库中已有文件。"
         internalCreate cfg 0 |> ignore
 
     let buildCacheArray (ptr: nativeptr<byte>) cachedSize (fs: FileStream) toRead =
@@ -285,37 +287,56 @@ module Chunk =
 
     //#region 读写操作
 
-    let append (writerTo: BinaryWriter -> unit) (oldPos: int64) (writer: Writer) : int64 =
-        let { FlushStream = FlushStream fs; WriterStream = WriterStream ws; BufferStream = Buffer bs; BufferWriter = bw; MD5 = md5; Stop = stop } = writer
+    let freeAppend (writeTo: BinaryWriter -> unit) (bs: MemoryStream) (bw: BinaryWriter) =
         bs.SetLength 4L
         bs.Position <- 4L
-        writerTo bw
+        writeTo bw
         let length = int bs.Length - 4
         bw.Write length
         bs.Position <- 0L
         bw.Write length
-        match oldPos + int64 (length + 2 * sizeof<int>) with
-        | newPos when newPos > stop -> oldPos
-        | newPos ->
+        length + 2 * sizeof<int> |> int64
+
+    let fixedAppend (fixedLength: int) (writeTo: BinaryWriter -> unit) (bs: MemoryStream) (bw: BinaryWriter) =
+        bs.SetLength 0L
+        writeTo bw
+        match int bs.Length with
+        | l when l = fixedLength -> int64 fixedLength
+        | l -> failwithf "写入长度%d，不等于固定长度%d" l fixedLength
+
+    let append (internalAppend: (BinaryWriter -> unit) -> MemoryStream -> BinaryWriter -> int64) writeTo oldPos writer : int64 =
+        let { FlushStream = FlushStream fs; WriterStream = WriterStream ws; BufferStream = Buffer bs; BufferWriter = bw; MD5 = md5; Stop = stop } = writer
+        let newPos = oldPos + internalAppend writeTo bs bw
+        match newPos with
+        | np when np > stop -> oldPos
+        | np ->
             let len = int bs.Length
             let buf = bs.GetBuffer ()
             md5.TransformBlock(buffer, 0, len, null, 0) |> ignore
             ws.Write (buf, 0, len)
             fs.Write (buf, 0, len)
-            newPos
+            np
 
-    let forwardRead (f: BinaryReader -> unit) localPos readerItem =
+    let freeRead (readFrom: BinaryReader -> unit) localPos readerItem =
         let { ReaderStream = ReaderStream rs; BinaryReader = br } = readerItem
         rs.Position <- localPos
         let prefixLength = br.ReadInt32 ()
         if prefixLength <= 0 then failwithf "数据长度应为正值，但实际为%d。" prefixLength
-        f br
+        readFrom br
         let suffixLength = br.ReadInt32 ()
         if prefixLength <> suffixLength then failwithf "前缀长度%d 不等于后缀长度%d。" prefixLength suffixLength
 
-    let read readFrom (reader: Reader) globalPos = async {
+    let fixedRead (fixedLength: int) (readFrom: BinaryReader -> unit) localPos readerItem =
+        let { ReaderStream = ReaderStream rs; BinaryReader = br } = readerItem
+        rs.Position <- localPos
+        readFrom br
+        match rs.Position - localPos with
+        | l when l <> int64 fixedLength -> failwithf "读取长度%d，不等于固定长度%d" l fixedLength
+        | _ -> ()
+
+    let read (internalRead: (BinaryReader -> unit) -> int64 -> ReaderItem -> unit) readFrom (reader: Reader) globalPos = async {
         let localPos = globalPos - reader.Start + ChunkHeader.size
-        return! reader.Agent.AsyncAction <| forwardRead readFrom localPos
+        return! reader.Agent.AsyncAction <| internalRead readFrom localPos
     }
 
     //#endregion

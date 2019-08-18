@@ -6,6 +6,8 @@ type internal ValidFileName
 
 type internal Chunk
 
+type internal ReaderItem
+
 type internal Reader
 
 type internal Writer
@@ -84,22 +86,56 @@ module internal Chunk =
     /// <param name="writer">Writer。</param>
     val closeWriter : Writer -> unit
 
+    /// <summary>写入自由长度数据
+    /// </summary>
+    /// <param name="writeTo">写入缓存的函数。</param>
+    /// <param name="bs">用于写入数据的缓存。</param>
+    /// <param name="bw">用于写入缓存的BinaryWriter。</param>
+    /// <returns>写入数据的长度。</returns>
+    val freeAppend : (BinaryWriter -> unit) -> MemoryStream -> BinaryWriter -> int64
+
+    /// <summary>写入固定长度数据
+    /// </summary>
+    /// <param name="fixedLength">固定的数据长度。</param>
+    /// <param name="writeTo">写入缓存的函数。</param>
+    /// <param name="bs">用于写入数据的缓存。</param>
+    /// <param name="bw">用于写入缓存的BinaryWriter。</param>
+    /// <returns>写入数据的长度。</returns>
+    val fixedAppend : int -> (BinaryWriter -> unit) -> MemoryStream -> BinaryWriter -> int64
+
     /// <summary>写入数据
     /// <para>1、先写入缓存，然后写入Chunk。</para>
     /// <para>2、有问题的不写入，返回的位置仍为原来的全局位置。</para>
     /// </summary>
+    /// <param name="internalAppend">内部的写入数据函数。</param>
     /// <param name="writeTo">写入缓存的函数。</param>
     /// <param name="oldPos">当前写入流的全局位置。</param>
     /// <param name="writer">Writer。</param>
     /// <returns>写入之后的全局位置。</returns>
-    val append : (BinaryWriter -> unit) -> int64 -> Writer -> int64
+    val append : ((BinaryWriter -> unit) -> MemoryStream -> BinaryWriter -> int64) -> (BinaryWriter -> unit) -> int64 -> Writer -> int64
+
+    /// <summary>读取自由长度数据
+    /// </summary>
+    /// <param name="readFrom">从二进制流读取数据的函数。</param>
+    /// <param name="localPos">读取数据的本地位置。</param>
+    /// <param name="readerItem">用于读取数据的资源。</param>
+    val freeRead : (BinaryReader -> unit) -> int64 -> ReaderItem -> unit
+
+    /// <summary>读取固定长度数据
+    /// </summary>
+    /// <param name="fixedLength">固定的数据长度。</param>
+    /// <param name="readFrom">从二进制流读取数据的函数。</param>
+    /// <param name="localPos">读取数据的本地位置。</param>
+    /// <param name="readerItem">用于读取数据的资源。</param>
+    val fixedRead : int -> (BinaryReader -> unit) -> int64 -> ReaderItem -> unit
 
     /// <summary>读取数据
     /// </summary>
+    /// <param name="internalRead">内部的读取函数。</param>
     /// <param name="readFrom">从二进制流读取数据的函数。</param>
     /// <param name="reader">Reader。</param>
     /// <param name="globalPos">读取数据的全局位置。</param>
-    val read : (BinaryReader -> unit) -> Reader -> int64 -> Async<unit>
+    val read : ((BinaryReader -> unit) -> int64 -> ReaderItem -> unit) -> (BinaryReader -> unit) -> Reader -> int64 -> Async<unit>
 
     /// <summary>完成一个Chunk，并添加新Chunk
     /// </summary>

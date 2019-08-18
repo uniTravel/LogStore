@@ -1,5 +1,13 @@
 namespace LogStore.Core
 
+/// <summary>记录模式
+/// </summary>
+/// <typeparam name="Free">自由长度。</typeparam>
+/// <typeparam name="Fixed">固定长度。</typeparam>
+type LogMode =
+    | Free
+    | Fixed of int
+
 /// <summary>ChunkConfig配置
 /// </summary>
 [<Sealed>]
@@ -13,7 +21,8 @@ type ChunkConfig =
     /// <param name="chunkSize">Chunk文件中数据块的预设大小。</param>
     /// <param name="cacheSize">Chunk缓存数量。</param>
     /// <param name="readerCount">Chunk读取器的资源数量。</param>
-    new : string * string * int * int64 * int * int -> ChunkConfig
+    /// <param name="logMode">记录模式。</param>
+    new : string * string * int * int64 * int * int * LogMode -> ChunkConfig
 
     /// <summary>Chunk文件库路径
     /// </summary>
@@ -38,3 +47,7 @@ type ChunkConfig =
     /// <summary>Chunk读取器的资源数量
     /// </summary>
     member ReaderCount : int
+
+    /// <summary>记录模式
+    /// </summary>
+    member LogMode : LogMode
