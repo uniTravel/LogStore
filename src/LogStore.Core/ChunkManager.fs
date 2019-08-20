@@ -5,6 +5,7 @@ open System.IO
 
 type WriteCommand =
     | Write of (BinaryWriter -> unit) * AsyncReplyChannel<Result<int64 option, exn>>
+    | Position of AsyncReplyChannel<int64>
     | SwitchWriter
     | StopWrite
 
@@ -59,6 +60,9 @@ type ChunkManager (config: ChunkConfig) =
                     with ex ->
                         channel.Reply <| Error ex
                         return! loop (oldPos, oldWriter)
+                | Position channel ->
+                    channel.Reply oldPos
+                    return! loop (oldPos, oldWriter)
                 | SwitchWriter ->
                     let beginPos = int64 db.ChunkNumber * config.ChunkSize
                     return! loop (beginPos, db.Writer)
@@ -115,3 +119,5 @@ type ChunkManager (config: ChunkConfig) =
             | Ok reader -> return! Chunk.read internalRead readFrom reader globalPos
             | Error ex -> return raise ex
         }
+
+    member __.WritePosition = writeAgent.PostAndReply Position

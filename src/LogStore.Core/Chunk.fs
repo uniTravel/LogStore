@@ -144,7 +144,7 @@ module Chunk =
         tempFile.Flush true
         tempFile.Close ()
         File.Move (tempFilename, filename)
-        {| ChunkHeader = header; FileName = filename; ChunkFooter = footer |}
+        (header, filename, footer)
 
     let fromFile (ValidFileName filename) =
         let fs = new FileStream (filename, FileMode.Open, FileAccess.Read, FileShare.Read, readBufferSize, FileOptions.SequentialScan)
@@ -274,9 +274,9 @@ module Chunk =
         let newReader = { oldReader with Agent = PoolAgent (readerItems, 3.0) }
         readers.[oldIdx] <- num, newReader
         // 创建新的Reader、Writer
-        let tempchunk = internalCreate cfg (oldNum + 1)
-        let tempfs = new FileStream (tempchunk.FileName, FileMode.Open, FileAccess.Read, FileShare.Read, readBufferSize, FileOptions.SequentialScan)
-        let chunk = { ChunkHeader = tempchunk.ChunkHeader; OriginStream = OriginStream tempfs; ChunkFooter = tempchunk.ChunkFooter }
+        let (header, filename, footer) = internalCreate cfg (oldNum + 1)
+        let tempfs = new FileStream (filename, FileMode.Open, FileAccess.Read, FileShare.Read, readBufferSize, FileOptions.SequentialScan)
+        let chunk = { ChunkHeader = header; OriginStream = OriginStream tempfs; ChunkFooter = footer }
         let (newNum, _, w, r) = buildWriter cfg chunk
         let newIdx = newNum % cfg.CacheSize
         readers.[newIdx] <- newNum, r

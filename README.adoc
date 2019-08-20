@@ -1,16 +1,15 @@
 = LogStore
+Eric <eTouch@live.cn>
 :icons: font
-:toc:
-:toc-title:
 
-****
+[NOTE]
+====
 [.lead]
 以流的方式记录、访问数据。可靠、高效的流存储能最有效地支撑以下设计方式：
 
 * EDA（事件驱动架构）
 * CQRS（命令查询职责分离）
-****
-
+====
 
 == 环境
 目标框架::
