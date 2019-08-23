@@ -10,13 +10,6 @@ module ChunkDB =
         chunks |> List.iter Chunk.close
         Error reason
 
-    let rec initReaders (ra: (int * Reader) array) (rl: Reader list) (num: int) =
-        match rl with
-        | [] -> ra
-        | head :: tail ->
-            ra.[num % ra.Length] <- num, head
-            initReaders ra tail (num - 1)
-
     //#region 验证Chunk文件库
 
     let validateDirectory (path: string) =
@@ -33,7 +26,7 @@ module ChunkDB =
     let validateName (cfg: ChunkConfig) (files: string list) =
         let vfs = List.sortDescending files |> Chunk.validateName cfg
         match files, vfs with
-        | _ when files.Length = vfs.Length -> Ok <| List.truncate cfg.CacheSize vfs
+        | _ when files.Length = vfs.Length -> Ok vfs
         | _ -> Error "Chunk文件的命名模式不一致。"
 
     let validateIndex (cfg: ChunkConfig) (files: ValidFileName list) =
@@ -61,10 +54,11 @@ module ChunkDB =
         Chunk.create cfg
 
     let buildWorkArea (cfg: ChunkConfig) (chunks: Chunk list) =
-        let rs = chunks.Tail |> List.map (Chunk.buildReader cfg)
-        let (num, pos, w, r) = Chunk.buildWriter cfg chunks.Head
-        let ra = Array.zeroCreate chunks.Length
-        Ok (pos, Active { ChunkNum = num; Writer = w; Readers = initReaders ra (r :: rs) num })
+        let readers = Array.zeroCreate 100000
+        Chunk.buildReaders cfg readers chunks.Tail
+        let (pos, writer, reader) = Chunk.buildWriter cfg chunks.Head
+        readers.[chunks.Length - 1] <- reader
+        Ok (pos, Active { ChunkNum = chunks.Length - 1; Writer = writer; Readers = readers })
 
     let openDB (cfg: ChunkConfig) : int64 * DB =
         let result =
@@ -82,17 +76,17 @@ module ChunkDB =
 
     let closeDB (Active db) () =
         db.Writer |> Chunk.closeWriter
-        db.Readers |> Array.unzip |> snd |> Array.iter Chunk.closeReader
+        db.Readers |> Array.truncate (db.ChunkNum + 1) |> Array.iter Chunk.closeReader
 
-    let complete (Active db) (cfg: ChunkConfig) : Reader * DB =
-        let (reader, workarea) = Chunk.complete cfg db
-        reader, Active workarea
+    let complete (Active db) (cfg: ChunkConfig) : Reader option * Reader * DB =
+        let (unloadReader, oldReader, workarea) = Chunk.complete cfg db
+        unloadReader, oldReader, Active workarea
 
     let getChunkNumber (Active db) = db.ChunkNum
 
     let getWriter (Active db) = db.Writer
 
-    let getReaders (Active db) = db.ChunkNum, db.Readers
+    let getReaders (Active db) = db.Readers
 
 type DB with
     member this.Close = ChunkDB.closeDB this

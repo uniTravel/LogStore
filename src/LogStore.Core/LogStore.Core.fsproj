@@ -1,7 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <AssemblyName>UniCloud.LogStore.Core</AssemblyName>
-    <TargetFrameworks>netcoreapp2.2</TargetFrameworks>
+    <PackageId>UniCloud.LogStore.Core</PackageId>
+    <Version>0.0.1</Version>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\LogStore.Common\LogStore.Common.fsproj">

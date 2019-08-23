@@ -28,7 +28,7 @@ module ChunkHeader =
         { _chunkNumber = chunkNumber; _chunkSize = chunkSize; _chunkId = chunkId }
 
     let asByteArray (chunkHeader: ChunkHeader) =
-        let array = Array.zeroCreate <| int32 size
+        let array = Array.zeroCreate <| int size
         use memStream = new MemoryStream (array)
         use writer = new BinaryWriter (memStream)
         writer.Write (chunkHeader._chunkNumber)

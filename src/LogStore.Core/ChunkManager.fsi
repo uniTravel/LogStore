@@ -22,10 +22,6 @@ type ChunkManager =
 
     /// <summary>读取数据
     /// </summary>
-    /// <param name="readFrom">从二进制流读取数据的函数。</param>
     /// <param name="globalPos">读取数据的全局位置。</param>
-    member Read : (BinaryReader -> unit) -> int64 -> Async<unit>
-
-    /// <summary>全局的当前写入位置
-    /// </summary>
-    member WritePosition : int64
+    /// <param name="readFrom">从二进制流读取数据的函数。</param>
+    member Read : int64 -> (BinaryReader -> unit) -> Async<unit>

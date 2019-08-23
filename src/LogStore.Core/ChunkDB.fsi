@@ -27,7 +27,8 @@ type internal DB with
 
     /// <summary>完成一个Chunk，并添加新Chunk
     /// </summary>
-    member Complete : (ChunkConfig -> Reader * DB)
+    /// <returns>超过缓存限制、需要卸载的Reader，原来的最后一个Reader，新的DB。</returns>
+    member Complete : (ChunkConfig -> Reader option * Reader * DB)
 
     /// <summary>当前的ChunkNumber
     /// </summary>
@@ -39,4 +40,4 @@ type internal DB with
 
     /// <summary>获取读的Chunk集合
     /// </summary>
-    member Readers : int * (int * Reader) array
+    member Readers : Reader array

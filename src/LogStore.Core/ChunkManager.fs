@@ -4,8 +4,7 @@ open System
 open System.IO
 
 type WriteCommand =
-    | Write of (BinaryWriter -> unit) * AsyncReplyChannel<Result<int64 option, exn>>
-    | Position of AsyncReplyChannel<int64>
+    | Write of (BinaryWriter -> unit) * AsyncReplyChannel<Result<bool, exn>>
     | SwitchWriter
     | StopWrite
 
@@ -35,6 +34,8 @@ type ChunkManager (config: ChunkConfig) =
 
     let mutable db = db
 
+    let mutable checkpoint = pos
+
     let scavengeAgent =
         MailboxProcessor<ScavengeCommand>.Start <| fun inbox ->
             let rec loop () = async {
@@ -48,43 +49,38 @@ type ChunkManager (config: ChunkConfig) =
 
     let writeAgent =
         MailboxProcessor<WriteCommand>.Start <| fun inbox ->
-            let rec loop (oldPos:int64, oldWriter: Writer) = async {
+            let rec loop (oldWriter: Writer) = async {
                 match! inbox.Receive () with
                 | Write (writeTo, channel) ->
                     try
-                        let newPos = Chunk.append internalAppend writeTo oldPos oldWriter
+                        let newPos = Chunk.append internalAppend writeTo checkpoint oldWriter
                         match newPos with
-                        | pos when pos > oldPos -> channel.Reply <| Ok (Some pos)
-                        | _ -> channel.Reply <| Ok None
-                        return! loop (newPos, oldWriter)
+                        | pos when pos > checkpoint ->
+                            checkpoint <- pos
+                            channel.Reply <| Ok true
+                        | _ -> channel.Reply <| Ok false
+                        return! loop oldWriter
                     with ex ->
                         channel.Reply <| Error ex
-                        return! loop (oldPos, oldWriter)
-                | Position channel ->
-                    channel.Reply oldPos
-                    return! loop (oldPos, oldWriter)
+                        return! loop oldWriter
                 | SwitchWriter ->
-                    let beginPos = int64 db.ChunkNumber * config.ChunkSize
-                    return! loop (beginPos, db.Writer)
+                    checkpoint <- int64 db.ChunkNumber * config.ChunkSize
+                    return! loop db.Writer
                 | StopWrite -> return ()
             }
-            loop (pos, db.Writer)
+            loop db.Writer
 
     let readAgent =
         MailboxProcessor<ReadCommand>.Start <| fun inbox ->
-            let rec loop (currentIdx: int, readers: (int * Reader) array) = async {
+            let rec loop (readers: Reader array) = async {
                 match! inbox.Receive () with
                 | Read (globalPos, channel) ->
-                    let size = readers.Length
+                    if globalPos > checkpoint then
+                        channel.Reply <| Error (failwithf "位置越界，当前写入位置为%d。" checkpoint)
+                        return! loop readers
                     let chunkNum = int <| globalPos / config.ChunkSize
-                    if chunkNum > currentIdx || chunkNum < currentIdx - size then
-                        channel.Reply <| Error (failwithf "位置越界，当前ChunkNumber为%d，最大缓存Chunk数量为%d。" currentIdx size)
-                        return! loop (currentIdx, readers)
-                    let idx = chunkNum % config.CacheSize
-                    match readers.[idx] with
-                    | (num, reader) when chunkNum = num -> channel.Reply <| Ok reader
-                    | _ -> channel.Reply <| Error (failwithf "ChunkNumber%d无法取到Reader。" chunkNum)
-                    return! loop (currentIdx, readers)
+                    channel.Reply <| Ok readers.[chunkNum]
+                    return! loop readers
                 | SwitchReaders -> return! loop db.Readers
                 | StopRead -> return ()
             }
@@ -94,13 +90,16 @@ type ChunkManager (config: ChunkConfig) =
         match writeAgent.PostAndReply <| fun channel -> Write (writeTo, channel) with
         | Ok reply ->
             match reply with
-            | Some pos -> pos
-            | None ->
-                let (oldReader, newDB) = db.Complete config
+            | true -> checkpoint
+            | false ->
+                let (unloadReader, oldReader, newDB) = db.Complete config
                 db <- newDB
                 writeAgent.Post SwitchWriter
                 readAgent.Post SwitchReaders
                 scavengeAgent.Post <| Reader oldReader
+                match unloadReader with
+                | Some reader -> scavengeAgent.Post <| Reader reader
+                | None -> ()
                 append writeTo
         | Error ex -> raise ex
 
@@ -113,11 +112,9 @@ type ChunkManager (config: ChunkConfig) =
 
     member __.Append writeTo = append writeTo
 
-    member __.Read readFrom globalPos =
+    member __.Read globalPos readFrom =
         async {
             match! readAgent.PostAndAsyncReply <| fun channel -> Read (globalPos, channel) with
             | Ok reader -> return! Chunk.read internalRead readFrom reader globalPos
             | Error ex -> return raise ex
         }
-
-    member __.WritePosition = writeAgent.PostAndReply Position

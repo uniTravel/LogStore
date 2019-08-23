@@ -6,8 +6,6 @@ type internal ValidFileName
 
 type internal Chunk
 
-type internal ReaderItem
-
 type internal Reader
 
 type internal Writer
@@ -15,7 +13,7 @@ type internal Writer
 type internal WorkArea = {
     ChunkNum: int
     Writer: Writer
-    Readers: (int * Reader) array
+    Readers: Reader array
 }
 
 [<RequireQualifiedAccess>]
@@ -52,16 +50,16 @@ module internal Chunk =
     /// <summary>创建Reader
     /// </summary>
     /// <param name="cfg">ChunkConfig配置。</param>
-    /// <param name="chunk">已完成的Chunk。</param>
-    /// <returns>Reader。</returns>
-    val buildReader : ChunkConfig -> Chunk -> Reader
+    /// <param name="chunks">已完成的Chunk列表。</param>
+    /// <param name="readers">Reader数组。</param>
+    val buildReaders : ChunkConfig -> Reader array -> Chunk list -> unit
 
     /// <summary>创建Writer
     /// </summary>
     /// <param name="cfg">ChunkConfig配置。</param>
     /// <param name="chunk">当前的Chunk（未完成）。</param>
-    /// <returns>当前的ChunkNumber * GlobalPosition * Writer * Reader。</returns>
-    val buildWriter : ChunkConfig -> Chunk -> (int * int64 * Writer * Reader)
+    /// <returns>当前的GlobalPosition * Writer * Reader。</returns>
+    val buildWriter : ChunkConfig -> Chunk -> (int64 * Writer * Reader)
 
     /// <summary>初始化Chunk
     /// <para>创建ChunkNumber为零的Chunk。</para>
@@ -118,16 +116,16 @@ module internal Chunk =
     /// </summary>
     /// <param name="readFrom">从二进制流读取数据的函数。</param>
     /// <param name="localPos">读取数据的本地位置。</param>
-    /// <param name="readerItem">用于读取数据的资源。</param>
-    val freeRead : (BinaryReader -> unit) -> int64 -> ReaderItem -> unit
+    /// <param name="br">用于读取数据的资源。</param>
+    val freeRead : (BinaryReader -> unit) -> int64 -> BinaryReader -> unit
 
     /// <summary>读取固定长度数据
     /// </summary>
     /// <param name="fixedLength">固定的数据长度。</param>
     /// <param name="readFrom">从二进制流读取数据的函数。</param>
     /// <param name="localPos">读取数据的本地位置。</param>
-    /// <param name="readerItem">用于读取数据的资源。</param>
-    val fixedRead : int -> (BinaryReader -> unit) -> int64 -> ReaderItem -> unit
+    /// <param name="br">用于读取数据的资源。</param>
+    val fixedRead : int -> (BinaryReader -> unit) -> int64 -> BinaryReader -> unit
 
     /// <summary>读取数据
     /// </summary>
@@ -135,14 +133,14 @@ module internal Chunk =
     /// <param name="readFrom">从二进制流读取数据的函数。</param>
     /// <param name="reader">Reader。</param>
     /// <param name="globalPos">读取数据的全局位置。</param>
-    val read : ((BinaryReader -> unit) -> int64 -> ReaderItem -> unit) -> (BinaryReader -> unit) -> Reader -> int64 -> Async<unit>
+    val read : ((BinaryReader -> unit) -> int64 -> BinaryReader -> unit) -> (BinaryReader -> unit) -> Reader -> int64 -> Async<unit>
 
     /// <summary>完成一个Chunk，并添加新Chunk
     /// </summary>
     /// <param name="cfg">ChunkConfig配置。</param>
     /// <param name="workarea">当前工作区。</param>
-    /// <returns>完成的Reader，完成后的工作区。</returns>
-    val complete : ChunkConfig -> WorkArea -> (Reader * WorkArea)
+    /// <returns>超过缓存限制、需要卸载的Reader，完成的Reader，完成后的工作区。</returns>
+    val complete : ChunkConfig -> WorkArea -> (Reader option * Reader * WorkArea)
 
 [<Sealed>]
 type internal Chunk with
