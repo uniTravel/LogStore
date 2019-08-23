@@ -1,57 +1,45 @@
-module Performance.Tests
+module Performance
 
 open System
-open System.Diagnostics
 open System.IO
-open System.Security.Cryptography
 open Expecto
+open LogStore.Core
 
-let private sw = Stopwatch ()
-let private after (ts : TimeSpan) testName =
-    sw.Stop ()
-    let elapsed = sw.ElapsedMilliseconds
-    printfn "%s：开始时间 %O | 结束时间 %O | 耗时 %d 毫秒" testName ts DateTime.Now.TimeOfDay elapsed
-let private go () = after DateTime.Now.TimeOfDay
+let path = @"D:\UC\LogStore\\TestCase\ChunkManager\Jour"
+let prefix = "Jour"
+let length = 6
+let chunkSize = int64 <| 8 * 1024 * 1024
+let maxCacheSize = 10
+let readerCount = 9
+
+let private config = ChunkConfig (path, prefix, length, chunkSize, maxCacheSize, readerCount, Free)
+if Directory.Exists path then
+    Directory.EnumerateFiles path |> Seq.iter (fun file ->
+        File.SetAttributes (file, FileAttributes.NotContentIndexed)
+        File.Delete file
+    )
+else Directory.CreateDirectory path |> ignore
+ChunkDB.init config
 
 [<Tests>]
-let testsMD5 =
-    testSequenced <| testList "MD5性能测试" [
-        let withArg f () =
-            let filename = @"D:\UC\LogStore\test.exe"
-            let fs = new FileStream (filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
-            let buffer = Array.zeroCreate <| 8 * 1024
-            let md5 = MD5.Create ()
-            sw.Restart () |> go |> f buffer fs md5
-            fs.Close ()
-            md5.Clear ()
-        yield! testFixture withArg [
-            "文件流", fun _ fs md5 finish ->
-                md5.ComputeHash (fs) |> ignore
-                finish "文件流"
-            "MD5", fun buffer fs md5 finish ->
-                let mutable toRead = int32 fs.Length
-                while toRead > 0 do
-                    let read = fs.Read (buffer, 0, buffer.Length)
-                    md5.TransformBlock (buffer, 0, read, null, 0) |> ignore
-                    match read with
-                    | 0 -> toRead <- 0
-                    | _ -> toRead <- toRead - read
-                md5.TransformFinalBlock (Array.empty, 0, 0) |> ignore
-                finish "MD5"
-            "递归", fun buffer fs md5 finish ->
-                let b = buffer.Length
-                let rec trans toRead =
-                    match toRead with
-                    | read when read <= b ->
-                        fs.Read (buffer, 0, read) |> ignore
-                        md5.TransformBlock (buffer, 0, read, null, 0)
-                    | _ ->
-                        fs.Read(buffer, 0, b) |> ignore
-                        md5.TransformBlock (buffer, 0, b, null, 0) |> ignore
-                        trans <| toRead - b
-                trans (int32 fs.Length) |> ignore
-                md5.TransformFinalBlock (Array.empty, 0, 0) |> ignore
-                finish "递归"
+let tests =
+    testSequenced <| testList "Chunk管理性能" [
+        let withArgs f () =
+            let manager = new ChunkManager (config)
+            go "Chunk管理性能" |> f manager
+            (manager :> IDisposable).Dispose ()
+        yield! testFixture withArgs [
+            "写入第一个数据。", fun manager finish ->
+                let random = Random ()
+                let mutable pos = 0L
+                for i in 1 .. 1 do
+                    let length = random.Next (4000, 5000)
+                    pos <- manager.Append <| fun bw ->
+                        bw.Write i
+                        sprintf "%0*d" length i |> bw.Write
+                printfn "%d" pos
+                // Expect.equal pos 12L "写入位置不正确"
+                finish 1
         ]
     ]
     |> testLabel "LogStore.Core"

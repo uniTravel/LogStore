@@ -9,9 +9,12 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="PerformanceTests.fs" />
+    <Compile Include="Fixtures.fs" />
     <Compile Include="ChunkDBTests.fs" />
-    <Compile Include="ChunkManagerTests.fs" />
+    <Compile Include="FreeModeTests.fs" />
+    <Compile Include="FixedModeTests.fs" />
+    <Compile Include="MD5Tests.fs" />
+    <Compile Include="PerformanceTests.fs" />
     <Compile Include="Main.fs" />
     <None Include="paket.references" />
   </ItemGroup>
