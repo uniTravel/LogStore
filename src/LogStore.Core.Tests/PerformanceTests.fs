@@ -13,33 +13,40 @@ let maxCacheSize = 10
 let readerCount = 9
 
 let private config = ChunkConfig (path, prefix, length, chunkSize, maxCacheSize, readerCount, Free)
-if Directory.Exists path then
-    Directory.EnumerateFiles path |> Seq.iter (fun file ->
-        File.SetAttributes (file, FileAttributes.NotContentIndexed)
-        File.Delete file
-    )
-else Directory.CreateDirectory path |> ignore
-ChunkDB.init config
+if not <| Directory.Exists path then Directory.CreateDirectory path |> ignore
 
-[<Tests>]
+[<PTests>]
 let tests =
     testSequenced <| testList "Chunk管理性能" [
         let withArgs f () =
-            let manager = new ChunkManager (config)
+            Directory.EnumerateFiles path |> Seq.iter (fun file ->
+                File.SetAttributes (file, FileAttributes.NotContentIndexed)
+                File.Delete file
+            )
+            ChunkDB.init config
+            use manager = new ChunkManager (config)
             go "Chunk管理性能" |> f manager
-            (manager :> IDisposable).Dispose ()
         yield! testFixture withArgs [
-            "写入第一个数据。", fun manager finish ->
+            "写入万条4K左右数据。", fun manager finish ->
                 let random = Random ()
                 let mutable pos = 0L
-                for i in 1 .. 1 do
-                    let length = random.Next (4000, 5000)
+                for i in 1 .. 10000 do
+                    let length = random.Next (4000, 4200)
                     pos <- manager.Append <| fun bw ->
                         bw.Write i
                         sprintf "%0*d" length i |> bw.Write
-                printfn "%d" pos
-                // Expect.equal pos 12L "写入位置不正确"
+                printfn "写入数据量：%d" pos
                 finish 1
+            "写入千条40K左右数据。", fun manager finish ->
+                let random = Random ()
+                let mutable pos = 0L
+                for i in 1 .. 1000 do
+                    let length = random.Next (40000, 41000)
+                    pos <- manager.Append <| fun bw ->
+                        bw.Write i
+                        sprintf "%0*d" length i |> bw.Write
+                printfn "写入数据量：%d" pos
+                finish 2
         ]
     ]
     |> testLabel "LogStore.Core"

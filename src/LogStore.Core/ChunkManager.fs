@@ -4,12 +4,12 @@ open System
 open System.IO
 
 type WriteCommand =
-    | Write of (BinaryWriter -> unit) * AsyncReplyChannel<Result<bool, exn>>
+    | Write of (BinaryWriter -> unit) * AsyncReplyChannel<Result<bool, string>>
     | SwitchWriter
     | StopWrite
 
 type ReadCommand =
-    | Read of int64 * AsyncReplyChannel<Result<Reader, exn>>
+    | Read of int64 * AsyncReplyChannel<Result<Reader, string>>
     | SwitchReaders
     | StopRead
 
@@ -61,7 +61,7 @@ type ChunkManager (config: ChunkConfig) =
                         | _ -> channel.Reply <| Ok false
                         return! loop oldWriter
                     with ex ->
-                        channel.Reply <| Error ex
+                        channel.Reply <| Error ex.Message
                         return! loop oldWriter
                 | SwitchWriter ->
                     checkpoint <- int64 db.ChunkNumber * config.ChunkSize
@@ -76,7 +76,7 @@ type ChunkManager (config: ChunkConfig) =
                 match! inbox.Receive () with
                 | Read (globalPos, channel) ->
                     if globalPos > checkpoint then
-                        channel.Reply <| Error (failwithf "位置越界，当前写入位置为%d。" checkpoint)
+                        channel.Reply <| Error (sprintf "读取位置越界，当前写入位置为%d。" checkpoint)
                         return! loop readers
                     let chunkNum = int <| globalPos / config.ChunkSize
                     channel.Reply <| Ok readers.[chunkNum]
@@ -101,7 +101,7 @@ type ChunkManager (config: ChunkConfig) =
                 | Some reader -> scavengeAgent.Post <| Reader reader
                 | None -> ()
                 append writeTo
-        | Error ex -> raise ex
+        | Error err -> invalidOp err
 
     interface IDisposable with
         member __.Dispose () =
@@ -116,5 +116,5 @@ type ChunkManager (config: ChunkConfig) =
         async {
             match! readAgent.PostAndAsyncReply <| fun channel -> Read (globalPos, channel) with
             | Ok reader -> return! Chunk.read internalRead readFrom reader globalPos
-            | Error ex -> return raise ex
+            | Error err -> invalidOp err
         }

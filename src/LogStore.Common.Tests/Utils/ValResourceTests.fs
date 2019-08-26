@@ -85,7 +85,7 @@ let asyncTests =
                 let elapsed = finish 2
                 Expect.floatLessThanOrClose Accuracy.medium elapsed 2100.0 "未能在预期时间内完成。"
             "请求资源时，资源池挂起时间超限。", fun agent finish ->
-                let nested = async{
+                let nested = async {
                     let! _ = Async.StartChild <| parallelTask [ 3000; 1500; 2000 ] add agent.AsyncFunc
                     do! Async.Sleep 1100
                     let! _ = (add >> agent.AsyncFunc) 100

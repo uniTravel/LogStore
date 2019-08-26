@@ -72,7 +72,7 @@ module ChunkDB =
             |> Result.bind (buildWorkArea cfg)
         match result with
         | Ok r -> r
-        | Error e -> failwith e
+        | Error e -> failwithf "打开Chunk库异常：%s" e
 
     let closeDB (Active db) () =
         db.Writer |> Chunk.closeWriter

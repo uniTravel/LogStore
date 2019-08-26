@@ -65,7 +65,7 @@ type PoolAgent<'res>(res: 'res list, blockSeconds) =
                 f res
                 agent.Post <| Enqueue res
                 return ()
-            | Error res -> return invalidOp res
+            | Error res -> invalidOp res
         }
 
     member __.Func f =

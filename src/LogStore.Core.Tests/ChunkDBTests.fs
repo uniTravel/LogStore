@@ -26,7 +26,7 @@ let initDBTests =
                     Directory.EnumerateFiles path |> Seq.iter File.Delete
                     Directory.Delete path
                 let f = fun _ -> ChunkDB.init config
-                Expect.throwsC f (fun ex -> printfn "出现异常：%s" ex.Message)
+                Expect.throwsC f (fun ex -> printfn "%s" ex.Message)
                 finish 1
             "配置的Path为空。", fun finish ->
                 Directory.CreateDirectory path |> ignore
@@ -34,7 +34,7 @@ let initDBTests =
                 finish 2
             "配置的Path非空。", fun finish ->
                 let f = fun _ -> ChunkDB.init config
-                Expect.throwsC f (fun ex -> printfn "出现异常：%s" ex.Message)
+                Expect.throwsC f (fun ex -> printfn "%s" ex.Message)
                 finish 3
         ]
     ]
@@ -51,12 +51,12 @@ let openDBTests =
                     Directory.EnumerateFiles path |> Seq.iter File.Delete
                     Directory.Delete path
                 let f = fun _ -> ChunkDB.openDB config |> ignore
-                Expect.throwsC f (fun ex -> printfn "出现异常：%s" ex.Message)
+                Expect.throwsC f (fun ex -> printfn "%s" ex.Message)
                 finish 1
             "配置的Path为空。", fun finish ->
                 Directory.CreateDirectory path |> ignore
                 let f = fun _ -> ChunkDB.openDB config |> ignore
-                Expect.throwsC f (fun ex -> printfn "出现异常：%s" ex.Message)
+                Expect.throwsC f (fun ex -> printfn "%s" ex.Message)
                 finish 2
             "Chunk库中有文件，但命名不规范。", fun finish ->
                 Directory.EnumerateFiles path |> Seq.iter File.Delete
@@ -69,7 +69,7 @@ let openDBTests =
                     File.Move (filename, newFileName)
                 )
                 let f = fun _ -> ChunkDB.openDB config |> ignore
-                Expect.throwsC f (fun ex -> printfn "出现异常：%s" ex.Message)
+                Expect.throwsC f (fun ex -> printfn "%s" ex.Message)
                 finish 3
             "Chunk库中有文件，但ChunkNumber不对。", fun finish ->
                 Directory.EnumerateFiles path |> Seq.iter File.Delete
@@ -82,7 +82,7 @@ let openDBTests =
                     File.Move (filename, newFileName)
                 )
                 let f = fun _ -> ChunkDB.openDB config |> ignore
-                Expect.throwsC f (fun ex -> printfn "出现异常：%s" ex.Message)
+                Expect.throwsC f (fun ex -> printfn "%s" ex.Message)
                 finish 4
         ]
     ]

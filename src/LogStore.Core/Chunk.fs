@@ -147,8 +147,8 @@ module Chunk =
         { ChunkHeader = ch; FileName = filename; OriginStream = os; ChunkFooter = cf }
 
     let create (cfg: ChunkConfig) : unit =
-        if Directory.Exists cfg.Path |> not then failwithf "文件夹%s不存在。" cfg.Path
-        if (Directory.GetFiles cfg.Path).Length <> 0 then failwith "Chunk库中已有文件。"
+        if Directory.Exists cfg.Path |> not then failwithf "初始化Chunk库异常：文件夹%s不存在。" cfg.Path
+        if (Directory.GetFiles cfg.Path).Length <> 0 then failwithf "初始化Chunk库异常：%s中已有文件。" cfg.Path
         internalCreate cfg 0 |> ignore
 
     //#endregion
@@ -351,26 +351,29 @@ module Chunk =
             fs.Write (buf, 0, len)
             np
 
-    let freeRead (readFrom: BinaryReader -> unit) localPos (br: BinaryReader) =
+    let freeRead (readFrom: BinaryReader -> unit) localPos (br: BinaryReader) = async {
         br.BaseStream.Position <- localPos
         let prefixLength = br.ReadInt32 ()
-        if prefixLength <= 0 then failwithf "数据长度应为正值，但实际为%d。" prefixLength
+        if prefixLength <= 0 then failwithf "自由读取异常：数据长度应为正值，但实际为%d。" prefixLength
         readFrom br
         let suffixLength = br.ReadInt32 ()
-        if prefixLength <> suffixLength then failwithf "前缀长度%d 不等于后缀长度%d。" prefixLength suffixLength
+        if prefixLength <> suffixLength then failwithf "自由读取异常：前缀长度%d 不等于后缀长度%d。" prefixLength suffixLength
+    }
 
-    let fixedRead (fixedLength: int) (readFrom: BinaryReader -> unit) localPos (br: BinaryReader) =
+    let fixedRead (fixedLength: int) (readFrom: BinaryReader -> unit) localPos (br: BinaryReader) = async {
         br.BaseStream.Position <- localPos
         readFrom br
         let length = br.ReadInt32 ()
-        if length <> fixedLength then failwithf "数据长度应为%d，但实际为%d。" fixedLength length
+        if length <> fixedLength then failwithf "定长读取异常：数据长度应为%d，但实际为%d。" fixedLength length
         match br.BaseStream.Position - localPos with
-        | l when l - 4L <> int64 fixedLength -> failwithf "读取长度%d，不匹配固定长度%d" l fixedLength
+        | l when l - 4L <> int64 fixedLength -> failwithf "定长读取异常：读取长度%d，不匹配固定长度%d" l fixedLength
         | _ -> ()
+    }
 
-    let read (internalRead: (BinaryReader -> unit) -> int64 -> BinaryReader -> unit) readFrom (reader: Reader) globalPos = async {
+    let read (internalRead: (BinaryReader -> unit) -> int64 -> BinaryReader -> Async<unit>) readFrom (reader: Reader) globalPos = async {
         let localPos = globalPos - reader.Start + ChunkHeader.size
-        return! reader.Agent.AsyncAction <| internalRead readFrom localPos
+        let! result = reader.Agent.AsyncFunc <| internalRead readFrom localPos
+        return! result
     }
 
     //#endregion

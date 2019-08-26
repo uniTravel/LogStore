@@ -117,7 +117,7 @@ module internal Chunk =
     /// <param name="readFrom">从二进制流读取数据的函数。</param>
     /// <param name="localPos">读取数据的本地位置。</param>
     /// <param name="br">用于读取数据的资源。</param>
-    val freeRead : (BinaryReader -> unit) -> int64 -> BinaryReader -> unit
+    val freeRead : (BinaryReader -> unit) -> int64 -> BinaryReader -> Async<unit>
 
     /// <summary>读取固定长度数据
     /// </summary>
@@ -125,7 +125,7 @@ module internal Chunk =
     /// <param name="readFrom">从二进制流读取数据的函数。</param>
     /// <param name="localPos">读取数据的本地位置。</param>
     /// <param name="br">用于读取数据的资源。</param>
-    val fixedRead : int -> (BinaryReader -> unit) -> int64 -> BinaryReader -> unit
+    val fixedRead : int -> (BinaryReader -> unit) -> int64 -> BinaryReader -> Async<unit>
 
     /// <summary>读取数据
     /// </summary>
@@ -133,7 +133,7 @@ module internal Chunk =
     /// <param name="readFrom">从二进制流读取数据的函数。</param>
     /// <param name="reader">Reader。</param>
     /// <param name="globalPos">读取数据的全局位置。</param>
-    val read : ((BinaryReader -> unit) -> int64 -> BinaryReader -> unit) -> (BinaryReader -> unit) -> Reader -> int64 -> Async<unit>
+    val read : ((BinaryReader -> unit) -> int64 -> BinaryReader -> Async<unit>) -> (BinaryReader -> unit) -> Reader -> int64 -> Async<unit>
 
     /// <summary>完成一个Chunk，并添加新Chunk
     /// </summary>

@@ -25,9 +25,8 @@ ChunkDB.init config
 let tests =
     testSequenced <| testList "定长Chunk管理" [
         let withArgs f () =
-            let manager = new ChunkManager (config)
+            use manager = new ChunkManager (config)
             go "定长Chunk管理" |> f manager
-            (manager :> IDisposable).Dispose ()
         yield! testFixture withArgs [
             "写入第一个数据：1L。", fun manager finish ->
                 let pos = manager.Append <| fun bw -> bw.Write 1L
@@ -53,6 +52,16 @@ let tests =
                     Expect.equal data 3L "读取的数据不对"
                 Async.RunSynchronously read
                 finish 3
+            "读取数据，但读取位置超过最后写入位置。", fun manager finish ->
+                let read = manager.Read 44L <| fun br -> br.ReadInt64 () |> ignore
+                let f = fun _ -> Async.RunSynchronously read
+                Expect.throwsC f (fun ex -> printfn "%s" ex.Message)
+                finish 4
+            "读取第三个数据，但读取位置不对。", fun manager finish ->
+                let read = manager.Read 26L <| fun br -> br.ReadInt64 () |> ignore
+                let f = fun _ -> Async.RunSynchronously read
+                Expect.throwsC f (fun ex -> printfn "%s" ex.Message)
+                finish 5
         ]
     ]
     |> testLabel "LogStore.Core"
