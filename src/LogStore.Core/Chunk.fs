@@ -103,7 +103,7 @@ module Chunk =
         os.Close ()
 
     let closeWriter (writer: Writer) : unit =
-        let { FlushStream = FlushStream fs; WriterStream = WriterStream ws; BufferStream = Buffer bs; BufferWriter = bw; MD5 = md5 } = writer
+        let { FlushStream = FlushStream fs; WriterStream = WriterStream ws; BufferStream = BufferStream bs; BufferWriter = bw; MD5 = md5 } = writer
         bw.Close ()
         bs.Close ()
         ws.Close ()
@@ -248,7 +248,7 @@ module Chunk =
                 new BinaryReader (um)
             )
         let reader = { CachedData = Some cachedData; FileName = chunk.FileName; Start = start; Agent = PoolAgent (brs, 3.0) }
-        let flush = new FileStream (chunk.FileName, FileMode.Open, FileAccess.ReadWrite, FileShare.Read, writeBufferSize, FileOptions.SequentialScan)
+        let flush = new FileStream (chunk.FileName, FileMode.Open, FileAccess.ReadWrite, FileShare.Read, writeBufferSize, FileOptions.None)
         let write = new UnmanagedMemoryStream (ptr, cachedSize, cachedSize, FileAccess.ReadWrite)
         flush.Position <- pos
         write.Position <- pos
@@ -257,7 +257,7 @@ module Chunk =
             CachedData = cachedData
             FlushStream = FlushStream flush
             WriterStream = WriterStream write
-            BufferStream = Buffer memStream
+            BufferStream = BufferStream memStream
             BufferWriter = new BinaryWriter (memStream)
             MD5 = md5
             Stop = start + cfg.ChunkSize
@@ -339,7 +339,7 @@ module Chunk =
         | l -> failwithf "写入长度%d，不匹配固定长度%d" l fixedLength
 
     let append (internalAppend: (BinaryWriter -> unit) -> MemoryStream -> BinaryWriter -> int64) writeTo oldPos writer : int64 =
-        let { FlushStream = FlushStream fs; WriterStream = WriterStream ws; BufferStream = Buffer bs; BufferWriter = bw; MD5 = md5; Stop = stop } = writer
+        let { FlushStream = FlushStream fs; WriterStream = WriterStream ws; BufferStream = BufferStream bs; BufferWriter = bw; MD5 = md5; Stop = stop } = writer
         let newPos = oldPos + internalAppend writeTo bs bw
         match newPos with
         | np when np > stop -> oldPos

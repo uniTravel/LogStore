@@ -15,4 +15,4 @@ type internal ReaderStream = ReaderStream of UnmanagedMemoryStream
 type internal WriterStream = WriterStream of UnmanagedMemoryStream
 
 // 写入内存所用的缓存。
-type internal BufferStream = Buffer of MemoryStream
+type internal BufferStream = BufferStream of MemoryStream
