@@ -1,17 +1,8 @@
 module RefResourcePool.Tests
 
-open System
 open System.IO
-open System.Diagnostics
 open Expecto
 open LogStore.Common.Utils
-
-let private sw = Stopwatch ()
-let private after (ts : TimeSpan) testName idx =
-    sw.Stop ()
-    let elapsed = sw.Elapsed.TotalMilliseconds
-    printfn "%s%d：开始时间 %O | 结束时间 %O | 耗时 %.3f 毫秒" testName idx ts DateTime.Now.TimeOfDay elapsed
-let private go testName () = after DateTime.Now.TimeOfDay testName
 
 let private path = @"D:\UC\LogStore\TestCase\ResourcePool\"
 
@@ -23,7 +14,7 @@ let private createFile filename =
 
 [<Tests>]
 let syncTests =
-    testSequencedGroup "Ref Resource Pool" <| testList "同步调用引用" [
+    testSequenced <| testList "同步调用引用" [
         let withAgent f () =
             Directory.EnumerateFiles path |> Seq.iter File.Delete
             let filename = Path.Combine [| path; @"test.txt" |]
@@ -32,7 +23,7 @@ let syncTests =
             let sr2 = File.OpenText filename
             let sr3 = File.OpenText filename
             let agent = new PoolAgent<StreamReader> ([ sr1; sr2; sr3 ], 1.0)
-            sw.Restart() |> go "同步调用引用" |> f agent
+            go "同步调用引用" |> f agent
             agent.Close <| Some (fun x -> x.Close ())
         yield! testFixture withAgent [
             "同步请求资源，运行Action操作。", fun agent finish ->

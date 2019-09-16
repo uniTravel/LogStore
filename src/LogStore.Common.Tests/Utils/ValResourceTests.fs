@@ -1,8 +1,6 @@
 module ValResourcePool.Tests
 
-open System
 open System.Threading
-open System.Diagnostics
 open Expecto
 open LogStore.Common.Utils
 
@@ -15,24 +13,16 @@ let private add (ms: int) x =
     Thread.Sleep ms
     result
 
-let private sw = Stopwatch ()
-let private after (ts: TimeSpan) testName idx =
-    sw.Stop ()
-    let elapsed = sw.Elapsed.TotalMilliseconds
-    printfn "%s%d：开始时间 %O | 结束时间 %O | 耗时 %.3f 毫秒" testName idx ts DateTime.Now.TimeOfDay elapsed
-    elapsed
-let private go testName () = after DateTime.Now.TimeOfDay testName
-
 let private parallelTask args l r =
     List.map (l >> r) args
     |> Async.Parallel
 
 [<Tests>]
 let syncTests =
-    testSequencedGroup "Val Resource Pool" <| testList "同步调用值" [
+    testSequenced <| testList "同步调用值" [
         let withAgent f () =
             let agent = new PoolAgent<int> ([ 1; 1 ], 1.0)
-            sw.Restart () |> go "同步调用值" |> f agent
+            goElapsed "同步调用值" |> f agent
             agent.Close None
         yield! testFixture withAgent [
             "同步请求资源，运行Action操作。", fun agent finish ->
@@ -56,10 +46,10 @@ let syncTests =
 
 [<Tests>]
 let asyncTests =
-    testSequencedGroup "Val Resource Pool" <| testList "异步调用值" [
+    testSequenced <| testList "异步调用值" [
         let withAgent f () =
             let agent = new PoolAgent<int> ([ 1; 1 ], 1.0)
-            sw.Restart () |> go "异步调用值" |> f agent
+            goElapsed "异步调用值" |> f agent
             agent.Close None
         yield! testFixture withAgent [
             "异步并发请求资源，运行Action操作。", fun agent finish ->
@@ -100,31 +90,31 @@ let asyncTests =
 
 [<Tests>]
 let controlTests =
-    testSequencedGroup "Val Resource Pool" <| testList "值资源池控制" [
+    testSequenced <| testList "值资源池控制" [
         let withAgent f () =
             let agent = new PoolAgent<int> ([ 1; 1 ], 1.0)
-            sw.Restart () |> go "值资源池控制" |> f agent
+            go "值资源池控制" |> f agent
             agent.Close None
         yield! testFixture withAgent [
             "资源池扩容。", fun agent finish ->
                 agent.IncreaseSize [ 1; 1; 1 ] |> ignore
                 Expect.equal agent.AdjustedSize 3 "资源池的扩容量应为3。"
-                finish 1 |> ignore
+                finish 1
             "资源池扩容，缩容量小于可缩容量。", fun agent finish ->
                 agent.IncreaseSize [ 1; 1; 1 ] |> ignore
                 agent.DecreaseSize 2 |> ignore
                 Expect.equal agent.AdjustedSize 1 "资源池的扩容量应为1。"
-                finish 2 |> ignore
+                finish 2
             "资源池扩容，缩容量大于可缩容量。", fun agent finish ->
                 agent.IncreaseSize [ 1; 1; 1 ] |> ignore
                 agent.DecreaseSize 5 |> ignore
                 Expect.equal agent.AdjustedSize 0 "资源池的扩容量应为0。"
-                finish 3 |> ignore
+                finish 3
             "资源池处于未扩容状态，请求缩容。", fun agent finish ->
                 let f = fun _ -> agent.DecreaseSize 1 |> ignore
                 Expect.throwsC f (fun ex -> printfn "出现异常：%s" ex.Message)
                 Expect.equal agent.AdjustedSize 0 "资源池的扩容量应为0。"
-                finish 4 |> ignore
+                finish 4
             "资源池处于已扩容、但资源均被占用，请求缩容。", fun agent finish ->
                 let nested = async {
                     agent.IncreaseSize [ 1 ] |> ignore
@@ -137,7 +127,7 @@ let controlTests =
                 let f = fun _ -> Async.RunSynchronously <| nested
                 Expect.throwsC f (fun ex -> printfn "出现异常：%s" ex.Message)
                 Expect.equal agent.AdjustedSize 1 "资源池的扩容量应为1。"
-                finish 5 |> ignore
+                finish 5
         ]
     ]
     |> testLabel "LogStore.Common"

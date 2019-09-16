@@ -19,4 +19,3 @@ module internal AssemblyVersionInformation =
     let [<Literal>] AssemblyDescription = "Common library for LogStore"
     let [<Literal>] AssemblyVersion = "0.0.1"
     let [<Literal>] AssemblyFileVersion = "0.0.1"
-    let [<Literal>] InternalsVisibleTo = "LogStore.Common.Tests"

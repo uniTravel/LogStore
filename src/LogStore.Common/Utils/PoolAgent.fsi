@@ -58,6 +58,6 @@ type PoolAgent<'res> =
     member DecreaseSize : int -> int
 
     /// <summary>关闭资源池
-    /// <param name="release">释放资源的操作。</param>
     /// </summary>
+    /// <param name="release">释放资源的操作。</param>
     member Close : ('res -> unit) option -> unit

@@ -9,6 +9,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Fixtures.fs" />
     <Compile Include="Utils/ValResourceTests.fs" />
     <Compile Include="Utils/RefResourceTests.fs" />
     <Compile Include="Main.fs" />

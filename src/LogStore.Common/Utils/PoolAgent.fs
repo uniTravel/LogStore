@@ -1,7 +1,5 @@
 namespace LogStore.Common.Utils
 
-open System
-
 type QueueMessage<'res> =
     | Init of 'res list
     | Enqueue of 'res
