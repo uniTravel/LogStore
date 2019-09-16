@@ -203,24 +203,6 @@ module Chunk =
             c |> List.iter (cacheReader cfg readers)
             f |> List.iter (fileReader cfg readers)
 
-    let rec freeSeek (br: BinaryReader) toWrite =
-        let length = br.ReadInt32 ()
-        match length with
-        | l when l <= 0 -> toWrite
-        | l ->
-            br.ReadBytes length |> ignore
-            let suffixLength = br.ReadInt32 ()
-            match suffixLength with
-            | s when s <> l -> toWrite
-            | _ -> freeSeek br <| toWrite + length + 2 * sizeof<int>
-
-    let rec fixedSeek (fixedLength: int) (br: BinaryReader) toWrite =
-        br.ReadBytes fixedLength |> ignore
-        let length = br.ReadInt32 ()
-        match length with
-        | l when l = fixedLength -> fixedSeek fixedLength br <| toWrite + fixedLength + sizeof<int>
-        | _ -> toWrite
-
     let cacheWriter (ptr: nativeptr<byte>) cachedSize (chunk: Chunk) (md5: MD5) internalSeek =
         let (OriginStream fs) = chunk.OriginStream
         use br = new BinaryReader (fs)
@@ -236,10 +218,7 @@ module Chunk =
         let cachedData = Marshal.AllocHGlobal (int cachedSize)
         let ptr = NativePtr.ofNativeInt<byte> cachedData
         let md5 = MD5.Create ()
-        let pos =
-            match cfg.LogMode with
-            | Free -> cacheWriter ptr cachedSize chunk md5 freeSeek
-            | Fixed l -> cacheWriter ptr cachedSize chunk md5 <| fixedSeek l
+        let pos = cacheWriter ptr cachedSize chunk md5 cfg.Seek
         File.SetAttributes (chunk.FileName, FileAttributes.NotContentIndexed)
         let brs =
             [ 1 .. cfg.ReaderCount ]
@@ -320,24 +299,6 @@ module Chunk =
 
     //#region 读写操作
 
-    let freeAppend (writeTo: BinaryWriter -> unit) (bs: MemoryStream) (bw: BinaryWriter) =
-        bs.SetLength 4L
-        bs.Position <- 4L
-        writeTo bw
-        let length = int bs.Length - 4
-        bw.Write length
-        bs.Position <- 0L
-        bw.Write length
-        bs.Length
-
-    let fixedAppend (fixedLength: int) (writeTo: BinaryWriter -> unit) (bs: MemoryStream) (bw: BinaryWriter) =
-        bs.SetLength 0L
-        writeTo bw
-        bw.Write fixedLength
-        match int bs.Length with
-        | l when l = fixedLength + sizeof<int> -> bs.Length
-        | l -> failwithf "写入长度%d，不匹配固定长度%d" l fixedLength
-
     let append (internalAppend: (BinaryWriter -> unit) -> MemoryStream -> BinaryWriter -> int64) writeTo oldPos writer : int64 =
         let { FlushStream = FlushStream fs; WriterStream = WriterStream ws; BufferStream = BufferStream bs; BufferWriter = bw; MD5 = md5; Stop = stop } = writer
         let newPos = oldPos + internalAppend writeTo bs bw
@@ -350,25 +311,6 @@ module Chunk =
             ws.Write (buf, 0, len)
             fs.Write (buf, 0, len)
             np
-
-    let freeRead (readFrom: BinaryReader -> unit) localPos (br: BinaryReader) = async {
-        br.BaseStream.Position <- localPos
-        let prefixLength = br.ReadInt32 ()
-        if prefixLength <= 0 then failwithf "自由读取异常：数据长度应为正值，但实际为%d。" prefixLength
-        readFrom br
-        let suffixLength = br.ReadInt32 ()
-        if prefixLength <> suffixLength then failwithf "自由读取异常：前缀长度%d 不等于后缀长度%d。" prefixLength suffixLength
-    }
-
-    let fixedRead (fixedLength: int) (readFrom: BinaryReader -> unit) localPos (br: BinaryReader) = async {
-        br.BaseStream.Position <- localPos
-        readFrom br
-        let length = br.ReadInt32 ()
-        if length <> fixedLength then failwithf "定长读取异常：数据长度应为%d，但实际为%d。" fixedLength length
-        match br.BaseStream.Position - localPos with
-        | l when l - 4L <> int64 fixedLength -> failwithf "定长读取异常：读取长度%d，不匹配固定长度%d" l fixedLength
-        | _ -> ()
-    }
 
     let read (internalRead: (BinaryReader -> unit) -> int64 -> BinaryReader -> Async<unit>) readFrom (reader: Reader) globalPos = async {
         let localPos = globalPos - reader.Start + ChunkHeader.size

@@ -20,16 +20,6 @@ type ScavengeCommand =
 [<Sealed>]
 type ChunkManager (config: ChunkConfig) =
 
-    let internalAppend =
-        match config.LogMode with
-        | Free -> Chunk.freeAppend
-        | Fixed l -> Chunk.fixedAppend l
-
-    let internalRead =
-        match config.LogMode with
-        | Free -> Chunk.freeRead
-        | Fixed l -> Chunk.fixedRead l
-
     let (pos, db) = ChunkDB.openDB config
 
     let mutable db = db
@@ -53,7 +43,7 @@ type ChunkManager (config: ChunkConfig) =
                 match! inbox.Receive () with
                 | Write (writeTo, channel) ->
                     try
-                        let newPos = Chunk.append internalAppend writeTo checkpoint oldWriter
+                        let newPos = Chunk.append config.Writer writeTo checkpoint oldWriter
                         match newPos with
                         | pos when pos > checkpoint ->
                             checkpoint <- pos
@@ -115,6 +105,6 @@ type ChunkManager (config: ChunkConfig) =
     member __.Read globalPos readFrom =
         async {
             match! readAgent.PostAndAsyncReply <| fun channel -> Read (globalPos, channel) with
-            | Ok reader -> return! Chunk.read internalRead readFrom reader globalPos
+            | Ok reader -> return! Chunk.read config.Reader readFrom reader globalPos
             | Error err -> invalidOp err
         }

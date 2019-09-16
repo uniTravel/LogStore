@@ -4,7 +4,7 @@ open System
 open System.IO
 
 [<Sealed>]
-type ChunkManager =
+type internal ChunkManager =
 
     interface IDisposable
 

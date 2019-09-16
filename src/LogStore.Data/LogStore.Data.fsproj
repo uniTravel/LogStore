@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>UniCloud.LogStore.Data</AssemblyName>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="ChunkWriter.fsi" />
+    <Compile Include="ChunkWriter.fs" />
+    <Compile Include="ChunkReader.fsi" />
+    <Compile Include="ChunkReader.fs" />
+    <Compile Include="ChunkSeek.fsi" />
+    <Compile Include="ChunkSeek.fs" />
+    <None Include="paket.references" />
+  </ItemGroup>
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+</Project>

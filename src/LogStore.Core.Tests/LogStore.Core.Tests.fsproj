@@ -7,6 +7,9 @@
     <ProjectReference Include="..\LogStore.Core\LogStore.Core.fsproj">
       <Name>LogStore.Core.fsproj</Name>
     </ProjectReference>
+    <ProjectReference Include="..\LogStore.Data\LogStore.Data.fsproj">
+      <Name>LogStore.Data.fsproj</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Fixtures.fs" />

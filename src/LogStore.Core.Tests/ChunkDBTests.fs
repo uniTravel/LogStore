@@ -4,6 +4,7 @@ open System.IO
 open System.Text.RegularExpressions
 open Expecto
 open LogStore.Core
+open LogStore.Data
 
 let path = @"D:\UC\LogStore\\TestCase\ChunkDB\Jour"
 let prefix = "Jour"
@@ -11,9 +12,11 @@ let length = 6
 let chunkSize = int64 <| 16 * 1024 * 1024
 let maxCacheSize = 10
 let readerCount = 9
-let logMode = Free
+let writer = ChunkWriter.freeAppend
+let reader = ChunkReader.freeRead
+let seek = ChunkSeek.freeSeek
 
-let private config = ChunkConfig (path, prefix, length, chunkSize, maxCacheSize, readerCount, logMode)
+let private config = ChunkConfig (path, prefix, length, chunkSize, maxCacheSize, readerCount, writer, reader, seek)
 
 [<Tests>]
 let initDBTests =

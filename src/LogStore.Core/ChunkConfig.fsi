@@ -1,17 +1,11 @@
 namespace LogStore.Core
 
-/// <summary>记录模式
-/// </summary>
-/// <typeparam name="Free">自由长度。</typeparam>
-/// <typeparam name="Fixed">固定长度。</typeparam>
-type LogMode =
-    | Free
-    | Fixed of int
+open System.IO
 
 /// <summary>ChunkConfig配置
 /// </summary>
 [<Sealed>]
-type ChunkConfig =
+type internal ChunkConfig =
 
     /// <summary>构造函数
     /// </summary>
@@ -21,8 +15,19 @@ type ChunkConfig =
     /// <param name="chunkSize">Chunk文件中数据块的预设大小。</param>
     /// <param name="cacheSize">Chunk缓存数量。</param>
     /// <param name="readerCount">Chunk读取器的资源数量。</param>
-    /// <param name="logMode">记录模式。</param>
-    new : string * string * int * int64 * int * int * LogMode -> ChunkConfig
+    /// <param name="writer">写入函数。</param>
+    /// <param name="reader">读取函数。</param>
+    /// <param name="seek">搜寻函数。</param>
+    new :
+        string *
+        string *
+        int *
+        int64 *
+        int *
+        int *
+        ((BinaryWriter -> unit) -> MemoryStream -> BinaryWriter -> int64) *
+        ((BinaryReader -> unit) -> int64 -> BinaryReader -> Async<unit>) *
+        (BinaryReader -> int -> int) -> ChunkConfig
 
     /// <summary>Chunk文件库路径
     /// </summary>
@@ -48,6 +53,14 @@ type ChunkConfig =
     /// </summary>
     member ReaderCount : int
 
-    /// <summary>记录模式
+    /// <summary>写入函数
     /// </summary>
-    member LogMode : LogMode
+    member Writer : ((BinaryWriter -> unit) -> MemoryStream -> BinaryWriter -> int64)
+
+    /// <summary>读取函数
+    /// </summary>
+    member Reader : ((BinaryReader -> unit) -> int64 -> BinaryReader -> Async<unit>)
+
+    /// <summary>搜寻函数
+    /// </summary>
+    member Seek : (BinaryReader -> int -> int)
