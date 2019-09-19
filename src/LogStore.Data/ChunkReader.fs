@@ -15,9 +15,9 @@ module ChunkReader =
 
     let fixedRead (fixedLength: int) (readFrom: BinaryReader -> unit) localPos (br: BinaryReader) = async {
         br.BaseStream.Position <- localPos
-        readFrom br
         let length = br.ReadInt32 ()
         if length <> fixedLength then failwithf "定长读取异常：数据长度应为%d，但实际为%d。" fixedLength length
+        readFrom br
         match br.BaseStream.Position - localPos with
         | l when l - 4L <> int64 fixedLength -> failwithf "定长读取异常：读取长度%d，不匹配固定长度%d" l fixedLength
         | _ -> ()

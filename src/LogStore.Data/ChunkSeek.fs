@@ -16,8 +16,8 @@ module ChunkSeek =
             | _ -> freeSeek br <| toWrite + length + 2 * sizeof<int>
 
     let rec fixedSeek (fixedLength: int) (br: BinaryReader) toWrite =
-        br.ReadBytes fixedLength |> ignore
         let length = br.ReadInt32 ()
+        br.ReadBytes fixedLength |> ignore
         match length with
         | l when l = fixedLength -> fixedSeek fixedLength br <| toWrite + fixedLength + sizeof<int>
         | _ -> toWrite

@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>UniCloud.LogStore.Transport</AssemblyName>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\LogStore.Common\LogStore.Common.fsproj">
+      <Name>LogStore.Common.fsproj</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="BufferManager.fsi" />
+    <Compile Include="BufferManager.fs" />
+    <Compile Include="ServerConfig.fsi" />
+    <Compile Include="ServerConfig.fs" />
+    <Compile Include="Server.fsi" />
+    <Compile Include="Server.fs" />
+    <Compile Include="ServerSocket.fsi" />
+    <Compile Include="ServerSocket.fs" />
+    <Compile Include="ClientConfig.fsi" />
+    <Compile Include="ClientConfig.fs" />
+    <Compile Include="Client.fsi" />
+    <Compile Include="Client.fs" />
+    <Compile Include="ClientSocket.fsi" />
+    <Compile Include="ClientSocket.fs" />
+    <None Include="paket.references" />
+  </ItemGroup>
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+</Project>

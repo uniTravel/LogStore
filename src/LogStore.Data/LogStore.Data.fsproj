@@ -11,6 +11,10 @@
     <Compile Include="ChunkReader.fs" />
     <Compile Include="ChunkSeek.fsi" />
     <Compile Include="ChunkSeek.fs" />
+    <Compile Include="SocketServer.fsi" />
+    <Compile Include="SocketServer.fs" />
+    <Compile Include="SocketClient.fsi" />
+    <Compile Include="SocketClient.fs" />
     <None Include="paket.references" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />

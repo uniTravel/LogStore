@@ -16,8 +16,8 @@ module ChunkWriter =
 
     let fixedAppend (fixedLength: int) (writeTo: BinaryWriter -> unit) (bs: MemoryStream) (bw: BinaryWriter) =
         bs.SetLength 0L
-        writeTo bw
         bw.Write fixedLength
+        writeTo bw
         match int bs.Length with
         | l when l = fixedLength + sizeof<int> -> bs.Length
         | l -> failwithf "写入长度%d，不匹配固定长度%d" l fixedLength

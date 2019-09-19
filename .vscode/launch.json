@@ -25,6 +25,17 @@
             "program": "bin/Debug/netcoreapp2.2/LogStore.Core.Tests.dll",
             "stopAtEntry": false,
             "console": "internalConsole"
+        },
+        {
+            "name": "LogStore.Transport.Tests",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build LogStore.Transport.Tests",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/LogStore.Transport.Tests/",
+            "program": "bin/Debug/netcoreapp2.2/LogStore.Transport.Tests.dll",
+            "stopAtEntry": false,
+            "console": "internalConsole"
         }
     ]
 }
