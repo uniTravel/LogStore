@@ -8,4 +8,4 @@ type ClientConfig (maxConnections, bufferSize, hostEndPoint, write) =
     member __.MaxConnections : int = maxConnections
     member __.BufferSize : int = bufferSize
     member __.HostEndPoint : IPEndPoint = hostEndPoint
-    member __.Write : (BinaryWriter -> unit) -> BinaryWriter -> unit = write
+    member __.Write : byte[] -> BinaryWriter -> unit = write

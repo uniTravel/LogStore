@@ -4,11 +4,7 @@ open System.IO
 
 module SocketClient =
 
-    let write (writeTo: BinaryWriter -> unit) (bw: BinaryWriter) : unit =
-        bw.BaseStream.SetLength 4L
-        bw.BaseStream.Position <- 4L
-        writeTo bw
-        let length = int bw.BaseStream.Length - 4
-        bw.Write length
-        bw.BaseStream.Position <- 0L
-        bw.Write length
+    let write (data: byte[]) (bw: BinaryWriter) : unit =
+        bw.Write data.Length
+        bw.Write data
+        bw.Write data.Length

@@ -15,5 +15,10 @@ type internal ClientSocket =
 
     /// <summary>发送数据
     /// </summary>
-    /// <param name="writeTo">写入数据的函数。</param>
-    member Send : (BinaryWriter -> unit) -> unit
+    /// <param name="data">待发送的数据。</param>
+    member Send : byte[] -> unit
+
+    /// <summary>异步发送数据
+    /// </summary>
+    /// <param name="data">待发送的数据。</param>
+    member SendAsync : byte[] -> Async<unit>

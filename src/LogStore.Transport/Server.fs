@@ -1,26 +1,32 @@
 namespace LogStore.Transport
 
+open System
 open System.IO
+open System.Net
 open System.Net.Sockets
-open System.Threading
 open LogStore.Common.Utils
 
-type ServerToken = {
-    Socket: Socket
-    Data: Ref<byte array>
+type internal State = {
+    Connections: int
+    AdjustedSize: int
+    BufferSize: int
+    Backlog: int
+    HostEndPoint: IPEndPoint
+    ReceiveTimeout: int
 }
 
 type Empty = NoItems
 
 type Standby = {
-    Agent: PoolAgent<SocketAsyncEventArgs>
-    Accepted: Semaphore
+    Agent: PoolAgent<byte[]>
+    State: State
 }
 
 type ServerArea = {
-    Agent: PoolAgent<SocketAsyncEventArgs>
-    Accepted: Semaphore
-    Listener: Socket
+    Agent: PoolAgent<byte[]>
+    State: State
+    Listener: TcpListener
+    Streams: NetworkStream list
 }
 
 type Server =
@@ -30,77 +36,56 @@ type Server =
 
 module Server =
 
-    let closeClientSocket (e: SocketAsyncEventArgs) (accepted: Semaphore) =
-        let token = e.UserToken :?> ServerToken
-        try token.Socket.Shutdown SocketShutdown.Send with _ -> ()
-        token.Socket.Close ()
-        accepted.Release () |> ignore
-
-    let processSend (e: SocketAsyncEventArgs) =
-        match e.SocketError with
-        | SocketError.Success -> ()
-        | err -> printfn "服务端发送数据错误：%A" err
-
-    let rec processReceive (e: SocketAsyncEventArgs) (accepted: Semaphore) =
-        if e.BytesTransferred > 0 && e.SocketError = SocketError.Success then
-            let { Socket = socket; Data = data } = e.UserToken :?> ServerToken
-            data := Array.append !data e.Buffer.[0 .. e.BytesTransferred - 1]
-            let willRaiseEvent = socket.ReceiveAsync e
-            if not willRaiseEvent then processReceive e accepted
+    let rec processReceive (netStream: NetworkStream) (writeTo: byte[] -> unit) (buffer: byte[]) =
+        try
+            if netStream.DataAvailable then
+                let q = netStream.Read (buffer, 0, buffer.Length)
+                printfn "服务端接收数据，长度%d" q
+                processReceive netStream writeTo buffer
             else
-                printfn "服务端接收数据，长度%d" (!data).Length
-                closeClientSocket e accepted
+                printfn "服务端收到数据，长度%d" 1
+            // processReceive netStream writeTo buffer
+        with _ ->
+            netStream.Close ()
 
     let initServer (cfg: ServerConfig) : Server =
-        let receiveBuffer = BufferManager (cfg.BufferSize * cfg.MaxConnections, cfg.BufferSize)
-        let accepted = new Semaphore (cfg.MaxConnections, cfg.MaxConnections)
-        let res =
-            [ 1 .. cfg.MaxConnections ]
-            |> List.map (fun _ ->
-                let readEventArg = new SocketAsyncEventArgs ()
-                readEventArg.Completed.Add (fun e ->
-                    match e.LastOperation with
-                    | SocketAsyncOperation.Receive -> processReceive e accepted
-                    | SocketAsyncOperation.Send -> processSend e
-                    | op -> failwithf "%A 不是接收或者发送操作。" op
-                )
-                receiveBuffer.SetBuffer readEventArg |> ignore
-                readEventArg
-            )
-        Standby { Agent = new PoolAgent<SocketAsyncEventArgs> (res, 3.0); Accepted = accepted }
+        let res = List.replicate cfg.Connections <| Array.zeroCreate<byte> cfg.BufferSize
+        let state = {
+            Connections = cfg.Connections
+            AdjustedSize = 0
+            BufferSize = cfg.BufferSize
+            Backlog = cfg.Backlog
+            HostEndPoint = cfg.HostEndPoint
+            ReceiveTimeout = cfg.ReceiveTimeout
+        }
+        Standby { Agent = new PoolAgent<byte[]> (res, 3.0); State = state }
 
-    let rec startServer (standby: Standby) (cfg: ServerConfig) : Server =
-        let listener = new Socket (AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
-        listener.Bind cfg.HostEndPoint
-        listener.Listen cfg.Backlog
-        let acceptEventArg = new SocketAsyncEventArgs ()
-        let area = { Agent = standby.Agent; Accepted = standby.Accepted; Listener = listener }
-        acceptEventArg.Completed.Add <| processAccept area cfg
-        startAccept area cfg acceptEventArg
-    and startAccept (server: ServerArea) (cfg: ServerConfig) (acceptEventArg: SocketAsyncEventArgs) =
-        let { Accepted = accepted; Listener = listener } = server
-        acceptEventArg.AcceptSocket <- null
-        accepted.WaitOne () |> ignore
-        let willRaiseEvent = listener.AcceptAsync acceptEventArg
-        if not willRaiseEvent then processAccept server cfg acceptEventArg
+    let startListen (standby: Standby) (listener: TcpListener) : Server =
+        listener.Start standby.State.Backlog
+        Active { Agent = standby.Agent; State = standby.State; Listener = listener; Streams = List.Empty }
+
+    let startAccept (server: ServerArea) (netStream: NetworkStream) (cfg: ServerConfig) : Server =
+        let { Agent = agent; Streams = streams } = server
+        netStream :: streams |> ignore
+        agent.AsyncAction <| processReceive netStream cfg.WriteTo |> Async.Start
         Active server
-    and processAccept (server: ServerArea) (cfg: ServerConfig) (acceptEventArg: SocketAsyncEventArgs) =
-        server.Agent.Action <| fun readEventArg ->
-            readEventArg.UserToken <- { Socket = acceptEventArg.AcceptSocket; Data = ref Array.empty }
-            let willRaiseEvent = acceptEventArg.AcceptSocket.ReceiveAsync readEventArg
-            if not willRaiseEvent then processReceive readEventArg server.Accepted
-        startAccept server cfg acceptEventArg |> ignore
 
-    let stopServer (server: ServerArea) () : unit =
-        let { Agent = agent; Listener = listener } = server
-        agent.Close <| Some (fun e ->
-            if not (isNull e.AcceptSocket) then
-                e.AcceptSocket.Shutdown SocketShutdown.Both
-                e.AcceptSocket.Close ()
-        )
-        try listener.Shutdown SocketShutdown.Both
-        with _ -> ()
-        listener.Close ()
+    let adjust (server: ServerArea) (size: int) : Server =
+        match size with
+        | s when s > 0 ->
+            let res = List.replicate s <| Array.zeroCreate<byte> server.State.BufferSize
+            server.Agent.IncreaseSize res |> ignore
+        | 0 -> ()
+        | s -> server.Agent.DecreaseSize -s |> ignore
+        let state = { server.State with AdjustedSize = server.Agent.AdjustedSize }
+        Active { server with State = state }
+
+    let stopServer (server: ServerArea) () : Server =
+        let { Agent = agent; State = state; Listener = listener; Streams = streams } = server
+        if state.AdjustedSize > 0 then agent.DecreaseSize state.AdjustedSize |> ignore
+        streams |> List.iter (fun ns -> ns.Close ())
+        listener.Stop ()
+        Standby { Agent = agent; State = { state with AdjustedSize = 0 } }
 
     //#region 根据状态控制
 
@@ -108,9 +93,11 @@ module Server =
         member __.InitServer = initServer
 
     type Standby with
-        member this.StartServer = startServer this
+        member this.StartListen = startListen this
 
     type ServerArea with
+        member this.StartAccept = startAccept this
+        member this.Adjust = adjust this
         member this.StopServer = stopServer this
 
     let init (server: Server) =
@@ -118,10 +105,26 @@ module Server =
         | Initial state -> state.InitServer
         | state -> failwithf "状态为%A，只有初始状态才能执行初始化操作。" state
 
-    let start (server: Server) =
+    let listen (server: Server) =
         match server with
-        | Standby state -> state.StartServer
-        | state -> failwithf "状态为%A，只有Standby状态才能启动Socket服务器。" state
+        | Standby state -> state.StartListen
+        | state -> failwithf "状态为%A，只有Standby状态才能开始侦听Socket连接。" state
+
+    let accept (server: Server) =
+        match server with
+        | Active state -> state.StartAccept
+        | state -> failwithf "状态为%A，只有Active状态才能接受Socket连接。" state
+
+    let resize (server: Server) =
+        match server with
+        | Active state -> state.Adjust
+        | state -> failwithf "状态为%A，只有Active状态才能调整Socket服务器的吞吐限制。" state
+
+    let getState (server: Server) () =
+        match server with
+        | Standby state -> state.State
+        | Active state -> state.State
+        | Initial _ -> failwith "初始状态无法获取Socket服务器状态。"
 
     let stop (server: Server) =
         match server with
@@ -134,5 +137,8 @@ module Server =
 
 type Server with
     member this.Init = Server.init this
-    member this.Start = Server.start this
+    member this.Listen = Server.listen this
+    member this.Accept = Server.accept this
+    member this.Resize = Server.resize this
+    member this.GetState = Server.getState this
     member this.Stop = Server.stop this

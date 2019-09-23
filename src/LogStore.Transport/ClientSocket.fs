@@ -10,7 +10,10 @@ type ClientSocket (config: ClientConfig) =
 
     interface IDisposable with
         member __.Dispose () =
-            failwith ""
+            client.Disconnect ()
 
-    member __.Send (writeTo: BinaryWriter -> unit) : unit =
-        client.Send writeTo config
+    member __.Send (data: byte[]) : unit =
+        client.Send data config
+
+    member __.SendAsync (data: byte[]) : Async<unit> =
+        client.SendAsync data config

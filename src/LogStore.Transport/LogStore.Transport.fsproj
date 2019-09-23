@@ -10,8 +10,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="BufferManager.fsi" />
-    <Compile Include="BufferManager.fs" />
     <Compile Include="ServerConfig.fsi" />
     <Compile Include="ServerConfig.fs" />
     <Compile Include="Server.fsi" />

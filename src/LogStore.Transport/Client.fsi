@@ -29,6 +29,12 @@ type internal Client with
 
     /// <summary>发送数据
     /// </summary>
-    /// <param name="writeTo">写入数据的函数。</param>
+    /// <param name="data">待发送的数据。</param>
     /// <param name="cfg">SockerClient配置。</param>
-    member Send : ((BinaryWriter -> unit) -> ClientConfig -> unit)
+    member Send : (byte[] -> ClientConfig -> unit)
+
+    /// <summary>异步发送数据
+    /// </summary>
+    /// <param name="data">待发送的数据。</param>
+    /// <param name="cfg">SockerClient配置。</param>
+    member SendAsync : (byte[] -> ClientConfig -> Async<unit>)
