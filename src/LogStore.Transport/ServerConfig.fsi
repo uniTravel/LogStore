@@ -10,7 +10,7 @@ type internal ServerConfig =
 
     /// <summary>构造函数
     /// </summary>
-    /// <param name="connections">Socket连接数。</param>
+    /// <param name="maxConnections">最大并发Socket连接数。</param>
     /// <param name="bufferSize">缓存大小。</param>
     /// <param name="backlog">请求的积压限度。</param>
     /// <param name="hostEndPoint">服务端的终结点。</param>
@@ -18,9 +18,9 @@ type internal ServerConfig =
     /// <param name="writeTo">处理数据的函数。</param>
     new : int * int * int * IPEndPoint * int * (byte[] -> unit) -> ServerConfig
 
-    /// <summary>Socket连接数
+    /// <summary>最大并发Socket连接数
     /// </summary>
-    member Connections : int
+    member MaxConnections : int
 
     /// <summary>缓存大小
     /// </summary>

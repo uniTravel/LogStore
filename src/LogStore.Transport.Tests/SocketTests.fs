@@ -18,7 +18,7 @@ let serverWriteTo (data: byte[]) : unit =
     let bw = new BinaryWriter (stream)
     bw.Write data
 let clientWrite = SocketClient.write
-let private serverConfig = ServerConfig (2, 1024, 10, hostEndPoint, 15000, serverWriteTo)
+let private serverConfig = ServerConfig (2, 1024, 10, hostEndPoint, 1000, serverWriteTo)
 let private clientConfig = ClientConfig (2, 1024, hostEndPoint, clientWrite)
 let private server = new ServerSocket (serverConfig)
 
@@ -35,14 +35,18 @@ let tests =
             "客户端1", fun finish ->
                 let client = new ClientSocket (clientConfig)
                 client.Send <| Encoding.UTF8.GetBytes "This is test"
-                // Thread.Sleep 500
+                Thread.Sleep 1900
+                client.Send <| Encoding.UTF8.GetBytes "This is another test"
+                Thread.Sleep 1500
                 // client.Send <| Encoding.UTF8.GetBytes "This is another test"
-                // Thread.Sleep 1500
                 finish 2
-            "客户端2", fun finish ->
-                let client = new ClientSocket (clientConfig)
-                client.Send <| Encoding.UTF8.GetBytes "This is second test"
-                finish 3
+            // "客户端2", fun finish ->
+            //     let client = new ClientSocket (clientConfig)
+            //     client.Send <| Encoding.UTF8.GetBytes "This is second test"
+            //     Thread.Sleep 500
+            //     client.Send <| Encoding.UTF8.GetBytes "This is another test"
+            //     Thread.Sleep 1500
+            //     finish 3
             // "客户端3", fun finish ->
             //     let client = new ClientSocket (clientConfig)
             //     client.Send <| Encoding.UTF8.GetBytes "This is third test"

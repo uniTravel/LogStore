@@ -16,10 +16,8 @@ type Client = Active of PoolAgent<ClientToken>
 module Client =
 
     let processSend (cfg: ClientConfig) (data: byte[]) (token: ClientToken) =
-        try
-            cfg.Write data token.Writer
-            token.Stream.Flush ()
-        with _ -> reraise ()
+        cfg.Write data token.Writer
+        token.Stream.Flush ()
 
     let processReceive (cfg: ClientConfig) (token: ClientToken) =
         ()

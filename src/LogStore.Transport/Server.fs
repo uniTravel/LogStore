@@ -2,12 +2,13 @@ namespace LogStore.Transport
 
 open System
 open System.IO
+open System.Diagnostics
 open System.Net
 open System.Net.Sockets
 open LogStore.Common.Utils
 
-type internal State = {
-    Connections: int
+type State = {
+    MaxConnections: int
     AdjustedSize: int
     BufferSize: int
     Backlog: int
@@ -26,7 +27,7 @@ type ServerArea = {
     Agent: PoolAgent<byte[]>
     State: State
     Listener: TcpListener
-    Streams: NetworkStream list
+    Streams: Ref<NetworkStream list>
 }
 
 type Server =
@@ -36,22 +37,37 @@ type Server =
 
 module Server =
 
-    let rec processReceive (netStream: NetworkStream) (writeTo: byte[] -> unit) (buffer: byte[]) =
+    let processReceive (netStream: NetworkStream) (cfg: ServerConfig) (buffer: byte[]) =
         try
-            if netStream.DataAvailable then
-                let q = netStream.Read (buffer, 0, buffer.Length)
-                printfn "服务端接收数据，长度%d" q
-                processReceive netStream writeTo buffer
-            else
-                printfn "服务端收到数据，长度%d" 1
-            // processReceive netStream writeTo buffer
-        with _ ->
+            let sw = Stopwatch ()
+            let timeout = int64 cfg.ReceiveTimeout
+            sw.Start ()
+            while true do
+                if sw.ElapsedMilliseconds > timeout then failwith "Timeout"
+                if netStream.DataAvailable then
+                    let q = netStream.Read (buffer, 0, buffer.Length)
+                    printfn "%A：服务端接收数据，长度%d" DateTime.Now.TimeOfDay q
+                    sw.Restart ()
+        with ex ->
+            printfn "%s" ex.Message
             netStream.Close ()
 
+    let acceptAgent (server: ServerArea) (cfg: ServerConfig) =
+        MailboxProcessor<NetworkStream>.Start <| fun inbox ->
+            let rec loop () = async {
+                let! netStream = inbox.Receive ()
+                netStream.ReadTimeout <- cfg.ReceiveTimeout
+                server.Agent.AsyncAction <| processReceive netStream cfg |> Async.Start
+                return! loop ()
+            }
+            loop ()
+
     let initServer (cfg: ServerConfig) : Server =
-        let res = List.replicate cfg.Connections <| Array.zeroCreate<byte> cfg.BufferSize
+        let res =
+            [1 .. cfg.MaxConnections]
+            |> List.map (fun _ -> Array.zeroCreate<byte> cfg.BufferSize)
         let state = {
-            Connections = cfg.Connections
+            MaxConnections = cfg.MaxConnections
             AdjustedSize = 0
             BufferSize = cfg.BufferSize
             Backlog = cfg.Backlog
@@ -62,12 +78,12 @@ module Server =
 
     let startListen (standby: Standby) (listener: TcpListener) : Server =
         listener.Start standby.State.Backlog
-        Active { Agent = standby.Agent; State = standby.State; Listener = listener; Streams = List.Empty }
+        Active { Agent = standby.Agent; State = standby.State; Listener = listener; Streams = ref List.empty }
 
     let startAccept (server: ServerArea) (netStream: NetworkStream) (cfg: ServerConfig) : Server =
-        let { Agent = agent; Streams = streams } = server
-        netStream :: streams |> ignore
-        agent.AsyncAction <| processReceive netStream cfg.WriteTo |> Async.Start
+        let { Streams = streams } = server
+        streams := netStream :: !streams
+        (acceptAgent server cfg).Post <| netStream
         Active server
 
     let adjust (server: ServerArea) (size: int) : Server =
@@ -83,7 +99,7 @@ module Server =
     let stopServer (server: ServerArea) () : Server =
         let { Agent = agent; State = state; Listener = listener; Streams = streams } = server
         if state.AdjustedSize > 0 then agent.DecreaseSize state.AdjustedSize |> ignore
-        streams |> List.iter (fun ns -> ns.Close ())
+        !streams |> List.iter (fun ns -> ns.Close ())
         listener.Stop ()
         Standby { Agent = agent; State = { state with AdjustedSize = 0 } }
 

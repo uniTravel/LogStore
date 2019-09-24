@@ -4,8 +4,8 @@ open System.IO
 open System.Net
 
 [<Sealed>]
-type ServerConfig (connections, bufferSize, backlog, hostEndPoint, timeout, writeTo) =
-    member __.Connections : int = connections
+type ServerConfig (maxConnections, bufferSize, backlog, hostEndPoint, timeout, writeTo) =
+    member __.MaxConnections : int = maxConnections
     member __.BufferSize : int = bufferSize
     member __.Backlog : int = backlog
     member __.HostEndPoint : IPEndPoint = hostEndPoint

@@ -13,14 +13,14 @@ type internal Server
 
 /// <summary>Socket服务器状态
 /// </summary>
-/// <typeparam name="Connections">Socket连接数。</typeparam>
+/// <typeparam name="MaxConnections">最大并发Socket连接数。</typeparam>
 /// <typeparam name="AdjustedSize">调整的Socket连接数，该数不小于0。</typeparam>
 /// <typeparam name="BufferSize">缓存大小。</typeparam>
 /// <typeparam name="Backlog">请求的积压限度。</typeparam>
 /// <typeparam name="HostEndPoint">服务端的终结点。</typeparam>
 /// <typeparam name="ReceiveTimeout">Socket接收超时。</typeparam>
 type internal State = {
-    Connections: int
+    MaxConnections: int
     AdjustedSize: int
     BufferSize: int
     Backlog: int
