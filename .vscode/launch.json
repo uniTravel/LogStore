@@ -11,7 +11,7 @@
             "preLaunchTask": "build LogStore.Common.Tests",
             "args": [],
             "cwd": "${workspaceFolder}/src/LogStore.Common.Tests/",
-            "program": "bin/Debug/netcoreapp2.2/LogStore.Common.Tests.dll",
+            "program": "bin/Debug/netcoreapp3.0/LogStore.Common.Tests.dll",
             "stopAtEntry": false,
             "console": "internalConsole"
         },
@@ -22,7 +22,7 @@
             "preLaunchTask": "build LogStore.Core.Tests",
             "args": [],
             "cwd": "${workspaceFolder}/src/LogStore.Core.Tests/",
-            "program": "bin/Debug/netcoreapp2.2/LogStore.Core.Tests.dll",
+            "program": "bin/Debug/netcoreapp3.0/LogStore.Core.Tests.dll",
             "stopAtEntry": false,
             "console": "internalConsole"
         },
@@ -33,7 +33,7 @@
             "preLaunchTask": "build LogStore.Transport.Tests",
             "args": [],
             "cwd": "${workspaceFolder}/src/LogStore.Transport.Tests/",
-            "program": "bin/Debug/netcoreapp2.2/LogStore.Transport.Tests.dll",
+            "program": "bin/Debug/netcoreapp3.0/LogStore.Transport.Tests.dll",
             "stopAtEntry": false,
             "console": "internalConsole"
         }

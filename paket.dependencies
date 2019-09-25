@@ -1,6 +1,6 @@
-source https://www.nuget.org/api/v2
+source https://api.nuget.org/v3/index.json
 
-framework: netcoreapp22
+framework: netcoreapp30
 
 nuget FSharp.Core
 nuget Logary
