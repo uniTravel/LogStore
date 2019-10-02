@@ -1,7 +1,6 @@
 namespace LogStore.Transport
 
 open System
-open System.IO
 
 [<Sealed>]
 type internal ClientSocket =
@@ -10,15 +9,17 @@ type internal ClientSocket =
 
     /// <summary>构造函数
     /// </summary>
-    /// <param name="config">SockerClient配置。</param>
+    /// <param name="config">SocketClient配置。</param>
     new : ClientConfig -> ClientSocket
 
     /// <summary>发送数据
     /// </summary>
     /// <param name="data">待发送的数据。</param>
-    member Send : byte[] -> unit
+    /// <returns>服务端的反馈。</returns>
+    member Send : byte[] -> byte[]
 
     /// <summary>异步发送数据
     /// </summary>
     /// <param name="data">待发送的数据。</param>
-    member SendAsync : byte[] -> Async<unit>
+    /// <returns>服务端的反馈。</returns>
+    member SendAsync : byte[] -> Async<byte[]>

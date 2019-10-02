@@ -4,10 +4,10 @@ open System.IO
 open System.Net
 
 [<Sealed>]
-type ServerConfig (maxConnections, bufferSize, backlog, hostEndPoint, timeout, writeTo) =
-    member __.MaxConnections : int = maxConnections
+type ServerConfig (bufferSize, backlog, hostEndPoint, timeout, handler, dataHandler) =
     member __.BufferSize : int = bufferSize
     member __.Backlog : int = backlog
     member __.HostEndPoint : IPEndPoint = hostEndPoint
-    member __.ReceiveTimeout : int = timeout
-    member __.WriteTo : byte[] -> unit = writeTo
+    member __.Timeout : int64 option = timeout
+    member __.Handler : (byte[] -> byte[]) -> BinaryReader -> BinaryWriter -> unit = handler
+    member __.DataHandler : byte[] -> byte[] = dataHandler

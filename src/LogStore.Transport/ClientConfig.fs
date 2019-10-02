@@ -4,8 +4,8 @@ open System.IO
 open System.Net
 
 [<Sealed>]
-type ClientConfig (maxConnections, bufferSize, hostEndPoint, write) =
-    member __.MaxConnections : int = maxConnections
+type ClientConfig (bufferSize, hostEndPoint, sender, receiver) =
     member __.BufferSize : int = bufferSize
     member __.HostEndPoint : IPEndPoint = hostEndPoint
-    member __.Write : byte[] -> BinaryWriter -> unit = write
+    member __.Sender : byte[] -> BinaryWriter -> unit = sender
+    member __.Receiver : BinaryReader -> byte[] = receiver

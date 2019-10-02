@@ -3,53 +3,52 @@ namespace LogStore.Transport
 open System.IO
 open System.Net
 open System.Net.Sockets
-open LogStore.Common.Utils
+open Logary
+open Logary.Message
 
-type ClientToken = {
-    Stream: BufferedStream
+type ClientHandler = {
     Writer: BinaryWriter
     Reader: BinaryReader
 }
 
-type Client = Active of PoolAgent<ClientToken>
+type Client = Active of ClientHandler
 
 module Client =
 
-    let processSend (cfg: ClientConfig) (data: byte[]) (token: ClientToken) =
-        cfg.Write data token.Writer
-        token.Stream.Flush ()
+    let lg = Log.create "LogStore.Transport.Client"
 
-    let processReceive (cfg: ClientConfig) (token: ClientToken) =
-        ()
+    let processSend (cfg: ClientConfig) (data: byte[]) (handler: ClientHandler) =
+        cfg.Sender data handler.Writer
 
-    let connect (maxConnections: int) (bufferSize: int) (hostEndPoint: IPEndPoint) : Client =
+    let processReceive (cfg: ClientConfig) (handler: ClientHandler) =
+        cfg.Receiver handler.Reader
+
+    let sending (cfg: ClientConfig) (data: byte[]) (handler: ClientHandler) : byte[] =
+        processSend cfg data handler
+        processReceive cfg handler
+
+    let connect (bufferSize: int) (hostEndPoint: IPEndPoint) : Client =
         let client = new TcpClient ()
         client.Connect hostEndPoint
+        lg.logSimple <| eventInfof "连接到Socket服务器%A。" hostEndPoint
         let netStream = client.GetStream ()
-        let res =
-            [ 1 .. maxConnections ]
-            |> List.map (fun _ ->
-                let stream = new BufferedStream (netStream, bufferSize)
-                let bw = new BinaryWriter (stream)
-                let br = new BinaryReader (stream)
-                { Stream = stream; Writer = bw; Reader = br }
-            )
-        Active <| new PoolAgent<ClientToken> (res, 3.0)
+        let buffer = new BufferedStream (netStream, bufferSize)
+        let bw = new BinaryWriter (buffer)
+        let br = new BinaryReader (buffer)
+        Active { Writer = bw; Reader = br }
 
     //#region 根据状态控制
 
-    let disconnect (Active agent) () : unit=
-        agent.Close <| Some (fun token -> token.Stream.Close ())
+    let disconnect (Active handler) () : unit=
+        handler.Writer.Close ()
+        handler.Reader.Close ()
 
-    let send (Active agent) (data: byte[]) (cfg: ClientConfig) : unit =
-        agent.Action <| fun token ->
-            if token.Stream.CanWrite then processSend cfg data token
-            if token.Stream.CanRead then processReceive cfg token
+    let send (Active handler) (data: byte[]) (cfg: ClientConfig) : byte[] =
+        sending cfg data handler
 
-    let sendAsync (Active agent) (data: byte[]) (cfg: ClientConfig) : Async<unit> =
-        agent.AsyncAction <| fun token ->
-            if token.Stream.CanWrite then processSend cfg data token
-            if token.Stream.CanRead then processReceive cfg token
+    let sendAsync (Active handler) (data: byte[]) (cfg: ClientConfig) : Async<byte[]> = async {
+        return sending cfg data handler
+    }
 
     //#endregion
 

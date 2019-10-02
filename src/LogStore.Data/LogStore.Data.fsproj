@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <AssemblyName>UniCloud.LogStore.Data</AssemblyName>
-    <TargetFrameworks>netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.0</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
@@ -11,10 +11,8 @@
     <Compile Include="ChunkReader.fs" />
     <Compile Include="ChunkSeek.fsi" />
     <Compile Include="ChunkSeek.fs" />
-    <Compile Include="SocketServer.fsi" />
-    <Compile Include="SocketServer.fs" />
-    <Compile Include="SocketClient.fsi" />
-    <Compile Include="SocketClient.fs" />
+    <Compile Include="SocketTransport.fsi" />
+    <Compile Include="SocketTransport.fs" />
     <None Include="paket.references" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />

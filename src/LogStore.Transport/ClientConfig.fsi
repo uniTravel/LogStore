@@ -10,15 +10,15 @@ type internal ClientConfig =
 
     /// <summary>构造函数
     /// </summary>
-    /// <param name="maxConnections">最大Socket连接数。</param>
     /// <param name="bufferSize">缓存大小。</param>
     /// <param name="hostEndPoint">服务端的终结点。</param>
-    /// <param name="write">生成发送数据的函数。</param>
-    new : int * int * IPEndPoint * (byte[] -> BinaryWriter -> unit) -> ClientConfig
-
-    /// <summary>最大Socket连接数
-    /// </summary>
-    member MaxConnections : int
+    /// <param name="sender">生成发送数据包的函数。</param>
+    /// <param name="receiver">接收反馈的函数。</param>
+    new :
+        int *
+        IPEndPoint *
+        (byte[] -> BinaryWriter -> unit) *
+        (BinaryReader -> byte[]) -> ClientConfig
 
     /// <summary>缓存大小
     /// </summary>
@@ -28,9 +28,13 @@ type internal ClientConfig =
     /// </summary>
     member HostEndPoint : IPEndPoint
 
-    /// <summary>生成发送数据包的函数
-    /// <para>在数据基础上添加协议，用于解析数据。</para>
+    /// <summary>客户端生成发送数据包
     /// </summary>
     /// <param name="data">待发送的数据。</param>
     /// <param name="bw">二进制流写入。</param>
-    member Write : (byte[] -> BinaryWriter -> unit)
+    member Sender : (byte[] -> BinaryWriter -> unit)
+
+    /// <summary>客户端接收反馈
+    /// </summary>
+    /// <param name="br">从数据流读取。</param>
+    member Receiver : (BinaryReader -> byte[])

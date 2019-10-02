@@ -1,6 +1,5 @@
 module Socket
 
-open System
 open System.IO
 open System.Net
 open System.Threading
@@ -11,46 +10,36 @@ open LogStore.Transport
 
 let port = 65000
 let hostName = Dns.GetHostName ()
-let address = (Dns.GetHostAddresses hostName).[2]
+let address = (Dns.GetHostAddresses hostName).[3]
 let hostEndPoint = IPEndPoint (address, port)
-let serverWriteTo (data: byte[]) : unit =
+let serverHandler = SocketTransport.defaultServerHandler
+let dataHandler (data: byte[]) : byte[] =
     let stream = new MemoryStream 8192
     let bw = new BinaryWriter (stream)
     bw.Write data
-let clientWrite = SocketClient.write
-let private serverConfig = ServerConfig (2, 1024, 10, hostEndPoint, 1000, serverWriteTo)
-let private clientConfig = ClientConfig (2, 1024, hostEndPoint, clientWrite)
+    data
+let clientSender = SocketTransport.defaultClientSender
+let clientReceiver = SocketTransport.defaultClientReceiver
+let private serverConfig = ServerConfig (1024, 10, hostEndPoint, None, serverHandler, dataHandler)
+let private clientConfig = ClientConfig (1024, hostEndPoint, clientSender, clientReceiver)
 let private server = new ServerSocket (serverConfig)
 
 [<Tests>]
 let tests =
     testList "Socket通讯" [
-        let withArgs f () =
-            go "Socket通讯" |> f
-        yield! testFixture withArgs [
-            "服务端", fun finish ->
-                server.Init ()
-                server.Start ()
-                finish 1
-            "客户端1", fun finish ->
-                let client = new ClientSocket (clientConfig)
-                client.Send <| Encoding.UTF8.GetBytes "This is test"
-                Thread.Sleep 1900
-                client.Send <| Encoding.UTF8.GetBytes "This is another test"
-                Thread.Sleep 1500
-                // client.Send <| Encoding.UTF8.GetBytes "This is another test"
-                finish 2
-            // "客户端2", fun finish ->
-            //     let client = new ClientSocket (clientConfig)
-            //     client.Send <| Encoding.UTF8.GetBytes "This is second test"
-            //     Thread.Sleep 500
-            //     client.Send <| Encoding.UTF8.GetBytes "This is another test"
-            //     Thread.Sleep 1500
-            //     finish 3
-            // "客户端3", fun finish ->
-            //     let client = new ClientSocket (clientConfig)
-            //     client.Send <| Encoding.UTF8.GetBytes "This is third test"
-            //     finish 4
-        ]
+        testCase "服务端" <| fun _ ->
+            server.Init ()
+            server.Start ()
+            Thread.Sleep 2000
+        testCase "客户端1" <| fun _ ->
+            let client = new ClientSocket (clientConfig)
+            client.Send <| Encoding.UTF8.GetBytes "This is test" |> ignore
+            client.Send <| Encoding.UTF8.GetBytes "This is another test" |> ignore
+        testCase "客户端2" <| fun _ ->
+            let client = new ClientSocket (clientConfig)
+            client.Send <| Encoding.UTF8.GetBytes "This is second test" |> ignore
+        testCase "客户端3" <| fun _ ->
+            let client = new ClientSocket (clientConfig)
+            client.Send <| Encoding.UTF8.GetBytes "This is third test" |> ignore
     ]
     |> testLabel "LogStore.Transport"

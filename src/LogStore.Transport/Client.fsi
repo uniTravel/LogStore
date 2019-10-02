@@ -1,6 +1,5 @@
 namespace LogStore.Transport
 
-open System.IO
 open System.Net
 
 /// <summary>Socket客户端
@@ -14,11 +13,10 @@ module internal Client =
 
     /// <summary>连接到Socket服务器
     /// </summary>
-    /// <param name="maxConnections">最大Socket连接数。</param>
     /// <param name="bufferSize">缓存大小。</param>
     /// <param name="hostEndPoint">Socket服务器终结点。</param>
     /// <returns>Active状态的Socket客户端。</returns>
-    val connect : int -> int -> IPEndPoint -> Client
+    val connect : int -> IPEndPoint -> Client
 
 [<Sealed>]
 type internal Client with
@@ -30,11 +28,13 @@ type internal Client with
     /// <summary>发送数据
     /// </summary>
     /// <param name="data">待发送的数据。</param>
-    /// <param name="cfg">SockerClient配置。</param>
-    member Send : (byte[] -> ClientConfig -> unit)
+    /// <param name="cfg">SocketClient配置。</param>
+    /// <returns>服务端的反馈。</returns>
+    member Send : (byte[] -> ClientConfig -> byte[])
 
     /// <summary>异步发送数据
     /// </summary>
     /// <param name="data">待发送的数据。</param>
-    /// <param name="cfg">SockerClient配置。</param>
-    member SendAsync : (byte[] -> ClientConfig -> Async<unit>)
+    /// <param name="cfg">SocketClient配置。</param>
+    /// <returns>服务端的反馈。</returns>
+    member SendAsync : (byte[] -> ClientConfig -> Async<byte[]>)
