@@ -1,0 +1,5 @@
+FSharp.Core
+Logary
+Expecto
+Expecto.BenchmarkDotNet
+Expecto.Hopac

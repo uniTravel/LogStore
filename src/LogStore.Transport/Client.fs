@@ -3,8 +3,6 @@ namespace LogStore.Transport
 open System.IO
 open System.Net
 open System.Net.Sockets
-open Logary
-open Logary.Message
 
 type ClientHandler = {
     Writer: BinaryWriter
@@ -14,8 +12,6 @@ type ClientHandler = {
 type Client = Active of ClientHandler
 
 module Client =
-
-    let lg = Log.create "LogStore.Transport.Client"
 
     let processSend (cfg: ClientConfig) (data: byte[]) (handler: ClientHandler) =
         cfg.Sender data handler.Writer
@@ -30,7 +26,6 @@ module Client =
     let connect (bufferSize: int) (hostEndPoint: IPEndPoint) : Client =
         let client = new TcpClient ()
         client.Connect hostEndPoint
-        lg.logSimple <| eventInfof "连接到Socket服务器%A。" hostEndPoint
         let netStream = client.GetStream ()
         let buffer = new BufferedStream (netStream, bufferSize)
         let bw = new BinaryWriter (buffer)

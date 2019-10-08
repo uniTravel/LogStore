@@ -1,6 +1,5 @@
 module FreeMode
 
-open System
 open System.IO
 open Expecto
 open LogStore.Core

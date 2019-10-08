@@ -1,6 +1,5 @@
 module FixedMode
 
-open System
 open System.IO
 open Expecto
 open LogStore.Core

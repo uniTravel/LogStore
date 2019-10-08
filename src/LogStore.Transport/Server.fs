@@ -4,8 +4,6 @@ open System
 open System.IO
 open System.Net.Sockets
 open System.Threading
-open Logary
-open Logary.Message
 
 type State = {
     Id: Guid
@@ -39,8 +37,6 @@ type Server =
 
 module Server =
 
-    let lg = Log.create "LogStore.Transport.Server"
-
     let processReceive (_, handler: ServerHandler) (cfg: ServerConfig) = async {
         let { Writer = bw; Reader = br } = handler
         while true do cfg.Handler cfg.DataHandler br bw
@@ -60,7 +56,6 @@ module Server =
                 let handler = { Writer = bw; Reader = br; SockerCancellation = socketCancellation }
                 let accepted = (state, handler)
                 server.SocketMap := (!server.SocketMap).Add (id, accepted)
-                lg.logSimple <| eventInfof "开始处理客户端%A的请求" socket.RemoteEndPoint
                 Async.Start (processReceive accepted cfg, socketCancellation.Token)
                 return! loop ()
             }
@@ -84,12 +79,10 @@ module Server =
 
     let initServer (cfg: ServerConfig) : Server =
         let listener = TcpListener cfg.HostEndPoint
-        lg.logSimple <| eventInfof "初始化Socket服务器%A" cfg.HostEndPoint
         Standby { Listener = listener }
 
     let startServer (standby: Standby) (cfg: ServerConfig) (serverCancellation: CancellationTokenSource) : Server =
         let server = { Listener = standby.Listener; ServerCancellation = serverCancellation; SocketMap = ref Map.empty }
-        lg.logSimple <| eventInfo "开始侦听客户端连接请求。"
         server.Listener.Start cfg.Backlog
         Async.Start (processAccept server cfg, serverCancellation.Token)
         Active server
@@ -110,7 +103,6 @@ module Server =
         serverCancellation.Cancel ()
         !sockets |> Map.iter (fun _ accepted -> closeAccepted accepted)
         listener.Stop ()
-        lg.logSimple <| eventInfo "关闭Socket服务器。"
         Standby { Listener = listener }
 
     //#region 根据状态控制

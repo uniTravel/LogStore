@@ -2,7 +2,6 @@ module Socket
 
 open System.IO
 open System.Net
-open System.Threading
 open System.Text
 open Expecto
 open LogStore.Data
@@ -30,7 +29,6 @@ let tests =
         testCase "服务端" <| fun _ ->
             server.Init ()
             server.Start ()
-            Thread.Sleep 2000
         testCase "客户端1" <| fun _ ->
             let client = new ClientSocket (clientConfig)
             client.Send <| Encoding.UTF8.GetBytes "This is test" |> ignore

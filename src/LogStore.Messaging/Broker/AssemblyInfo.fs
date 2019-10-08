@@ -9,7 +9,7 @@ open System.Runtime.CompilerServices
 [<assembly: AssemblyDescriptionAttribute("Messaging broker for LogStore")>]
 [<assembly: AssemblyVersionAttribute("0.0.1")>]
 [<assembly: AssemblyFileVersionAttribute("0.0.1")>]
-// [<assembly: InternalsVisibleToAttribute("LogStore.Messaging.Tests")>]
+[<assembly: InternalsVisibleToAttribute("LogStore.Messaging.Tests")>]
 do ()
 
 module internal AssemblyVersionInformation =
@@ -19,4 +19,3 @@ module internal AssemblyVersionInformation =
     let [<Literal>] AssemblyDescription = "Messaging broker for LogStore"
     let [<Literal>] AssemblyVersion = "0.0.1"
     let [<Literal>] AssemblyFileVersion = "0.0.1"
-    // let [<Literal>] InternalsVisibleTo = "LogStore.Messaging.Tests"

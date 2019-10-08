@@ -9,6 +9,7 @@ open System.Runtime.CompilerServices
 [<assembly: AssemblyDescriptionAttribute("Data transport library for LogStore")>]
 [<assembly: AssemblyVersionAttribute("0.0.1")>]
 [<assembly: AssemblyFileVersionAttribute("0.0.1")>]
+[<assembly: InternalsVisibleToAttribute("LogStore.Messaging.Broker")>]
 [<assembly: InternalsVisibleToAttribute("LogStore.Transport.Tests")>]
 do ()
 
