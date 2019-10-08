@@ -2,6 +2,7 @@ module Socket
 
 open System.IO
 open System.Net
+open System.Net.Sockets
 open System.Text
 open Expecto
 open LogStore.Data
@@ -9,7 +10,7 @@ open LogStore.Transport
 
 let port = 65000
 let hostName = Dns.GetHostName ()
-let address = (Dns.GetHostAddresses hostName).[3]
+let address = Dns.GetHostAddresses hostName |> Array.find (fun ad -> ad.AddressFamily = AddressFamily.InterNetwork)
 let hostEndPoint = IPEndPoint (address, port)
 let serverHandler = SocketTransport.defaultServerHandler
 let dataHandler (data: byte[]) : byte[] =

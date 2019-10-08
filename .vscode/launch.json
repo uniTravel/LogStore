@@ -36,6 +36,17 @@
             "program": "bin/Debug/netcoreapp3.0/LogStore.Transport.Tests.dll",
             "stopAtEntry": false,
             "console": "internalConsole"
+        },
+        {
+            "name": "LogStore.Messaging.Tests",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build LogStore.Messaging.Tests",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/LogStore.Messaging/Tests/",
+            "program": "bin/Debug/netcoreapp3.0/LogStore.Messaging.Tests.dll",
+            "stopAtEntry": false,
+            "console": "internalConsole"
         }
     ]
 }
