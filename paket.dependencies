@@ -1,10 +1,31 @@
 source https://api.nuget.org/v3/index.json
 
-framework: netcoreapp30
+framework auto-detect
 
 nuget FSharp.Core
 nuget Logary
+nuget Hopac
 nuget Expecto
 nuget Expecto.BenchmarkDotNet
 nuget Expecto.FsCheck
 nuget Expecto.Hopac
+
+group Build
+
+    source https://api.nuget.org/v3/index.json
+    storage none
+    framework auto-detect
+
+    nuget FSharp.Core
+    nuget Fake.DotNet.AssemblyInfoFile
+    nuget Fake.DotNet.Cli
+    nuget Fake.Core.Target
+    nuget Fake.Core.ReleaseNotes
+    nuget Fake.IO.FileSystem
+    nuget Fake.Tools.Octo
+    nuget Fake.Tools.Git
+    nuget Fake.DotNet.Paket
+    nuget Fake.Core.Xml
+    nuget Fake.Api.GitHub
+    nuget Fake.BuildServer.TeamCity
+    nuget Fake.IO.Zip

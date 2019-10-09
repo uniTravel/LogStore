@@ -1,4 +1,4 @@
-namespace LogStore.Core.AssemblyInfo
+namespace LogStore.Messaging.Broker.AssemblyInfo
 
 open System.Reflection
 open System.Runtime.CompilerServices
