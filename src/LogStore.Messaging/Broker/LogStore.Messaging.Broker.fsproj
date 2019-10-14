@@ -13,10 +13,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="MessageStore.fsi" />
-    <Compile Include="MessageStore.fs" />
-    <Compile Include="QueueStore.fsi" />
-    <Compile Include="QueueStore.fs" />
+    <Compile Include="BrokerConfig.fsi" />
+    <Compile Include="BrokerConfig.fs" />
+    <Compile Include="Store.fsi" />
+    <Compile Include="Store.fs" />
     <None Include="paket.references" />
   </ItemGroup>
   <Import Project="..\..\..\.paket\Paket.Restore.targets" />

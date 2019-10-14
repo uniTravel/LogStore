@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <AssemblyName>UniCloud.LogStore.Data</AssemblyName>
+    <AssemblyName>UniCloud.LogStore.Protocol</AssemblyName>
     <TargetFrameworks>netstandard2.1</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
