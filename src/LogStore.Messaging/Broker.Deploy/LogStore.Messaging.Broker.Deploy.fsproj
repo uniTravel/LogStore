@@ -1,15 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <AssemblyName>UniCloud.LogStore.Messaging.Producer</AssemblyName>
+    <AssemblyName>UniCloud.LogStore.Messaging.Broker.Deploy</AssemblyName>
+    <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\LogStore.Data\LogStore.Data.fsproj">
-      <Name>LogStore.Data.fsproj</Name>
+    <ProjectReference Include="..\Broker\LogStore.Messaging.Broker.fsproj">
+      <Name>LogStore.Messaging.Broker.fsproj</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Program.fs" />
     <None Include="paket.references" />
   </ItemGroup>
   <Import Project="..\..\..\.paket\Paket.Restore.targets" />

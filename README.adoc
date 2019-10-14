@@ -13,7 +13,7 @@ Eric <eTouch@live.cn>
 
 == 环境
 目标框架::
-* .NET Core 2.2
+* .NET Core 3.0
 开发语言::
 * F#
 

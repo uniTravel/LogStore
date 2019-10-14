@@ -1,7 +1,7 @@
-FROM mcr.microsoft.com/dotnet/core/runtime:2.2-alpine3.9 AS base
+FROM mcr.microsoft.com/dotnet/core/runtime:3.0-alpine AS base
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/core/sdk:2.2-alpine3.9 AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:3.0-alpine AS build
 WORKDIR /src/LogStore.Messaging/Broker
 COPY LogStore.Messaging.Broker.fsproj .
 RUN dotnet restore

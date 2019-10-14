@@ -1,4 +1,4 @@
-﻿module LogStore.Messaging.Broker
+﻿module LogStore.Messaging.Broker.Entry
 
 open Hopac
 open Logary

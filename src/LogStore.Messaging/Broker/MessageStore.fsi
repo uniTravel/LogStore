@@ -1,0 +1,1 @@
+namespace LogStore.Messaging.Broker
