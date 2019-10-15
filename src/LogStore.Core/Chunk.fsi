@@ -2,8 +2,6 @@ namespace LogStore.Core
 
 open System.IO
 
-type internal ValidFileName
-
 type internal Chunk
 
 type internal Reader
@@ -18,13 +16,6 @@ type internal WorkArea = {
 
 [<RequireQualifiedAccess>]
 module internal Chunk =
-
-    /// <summary>验证Chunk文件名是否合法
-    /// </summary>
-    /// <param name="cfg">ChunkConfig配置。</param>
-    /// <param name="input">待验证的Chunk文件名列表。</param>
-    /// <returns>可选的合法Chunk文件名。</returns>
-    val validateName : ChunkConfig -> string list -> ValidFileName list
 
     /// <summary>MD5验证
     /// </summary>

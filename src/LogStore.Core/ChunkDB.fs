@@ -24,7 +24,7 @@ module ChunkDB =
         | _ -> Ok files
 
     let validateName (cfg: ChunkConfig) (files: string list) =
-        let vfs = List.sortDescending files |> Chunk.validateName cfg
+        let vfs = List.sortDescending files |> Naming.validateName cfg
         match files, vfs with
         | _ when files.Length = vfs.Length -> Ok vfs
         | _ -> Error "Chunk文件的命名模式不一致。"
@@ -62,7 +62,8 @@ module ChunkDB =
 
     let openDB (cfg: ChunkConfig) : int64 * DB =
         let result =
-            Ok cfg.Path
+            let path = Path.Combine (cfg.Path, cfg.Folder)
+            Ok path
             |> Result.bind validateDirectory
             |> Result.bind validatePath
             |> Result.bind (validateName cfg)

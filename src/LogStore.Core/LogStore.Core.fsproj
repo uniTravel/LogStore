@@ -17,6 +17,8 @@
     <Compile Include="ChunkFooter.fs" />
     <Compile Include="ChunkConfig.fsi" />
     <Compile Include="ChunkConfig.fs" />
+    <Compile Include="Naming.fsi" />
+    <Compile Include="Naming.fs" />
     <Compile Include="Chunk.fsi" />
     <Compile Include="Chunk.fs" />
     <Compile Include="ChunkDB.fsi" />

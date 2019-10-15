@@ -3,9 +3,10 @@ namespace LogStore.Core
 open System.IO
 
 [<Sealed>]
-type ChunkConfig (path, prefix, length, chunkSize, cacheSize, readerCount, writer, reader, seek) =
+type ChunkConfig (path, folder, suffix, length, chunkSize, cacheSize, readerCount, writer, reader, seek) =
     member __.Path : string = path
-    member __.Prefix : string = prefix
+    member __.Folder : string = folder
+    member __.Suffix : string = suffix
     member __.Length : int = length
     member __.ChunkSize : int64 = chunkSize
     member __.CacheSize : int = cacheSize

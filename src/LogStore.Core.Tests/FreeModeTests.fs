@@ -5,8 +5,9 @@ open Expecto
 open LogStore.Core
 open LogStore.Data
 
-let path = @"D:\UC\LogStore\\TestCase\FreeMode\Jour"
-let prefix = "Jour"
+let area = @"D:\UC\LogStore\TestCase\FreeMode"
+let folder = "Log"
+let suffix = "log"
 let length = 6
 let chunkSize = int64 <| 8 * 1024 * 1024
 let maxCacheSize = 10
@@ -14,8 +15,9 @@ let readerCount = 9
 let writer = ChunkWriter.freeAppend
 let reader = ChunkReader.freeRead
 let seek = ChunkSeek.freeSeek
+let path = Path.Combine (area, folder)
 
-let private config = ChunkConfig (path, prefix, length, chunkSize, maxCacheSize, readerCount, writer, reader, seek)
+let private config = ChunkConfig (area, folder, suffix, length, chunkSize, maxCacheSize, readerCount, writer, reader, seek)
 if Directory.Exists path then
     Directory.EnumerateFiles path |> Seq.iter (fun file ->
         File.SetAttributes (file, FileAttributes.NotContentIndexed)

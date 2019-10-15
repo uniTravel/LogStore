@@ -10,7 +10,8 @@ type internal ChunkConfig =
     /// <summary>构造函数
     /// </summary>
     /// <param name="path">Chunk文件库路径。</param>
-    /// <param name="prefix">Chunk文件前缀。</param>
+    /// <param name="folder">Chunk文件夹。</param>
+    /// <param name="suffix">Chunk文件后缀。</param>
     /// <param name="length">Chunk文件名中索引的位数。</param>
     /// <param name="chunkSize">Chunk文件中数据块的预设大小。</param>
     /// <param name="cacheSize">Chunk缓存数量。</param>
@@ -19,6 +20,7 @@ type internal ChunkConfig =
     /// <param name="reader">读取函数。</param>
     /// <param name="seek">搜寻函数。</param>
     new :
+        string *
         string *
         string *
         int *
@@ -33,9 +35,13 @@ type internal ChunkConfig =
     /// </summary>
     member Path : string
 
-    /// <summary>Chunk文件前缀
+    /// <summary>Chunk文件夹
     /// </summary>
-    member Prefix : string
+    member Folder : string
+
+    /// <summary>Chunk文件后缀
+    /// </summary>
+    member Suffix : string
 
     /// <summary>Chunk文件名中索引的位数
     /// </summary>

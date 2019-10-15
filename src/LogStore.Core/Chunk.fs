@@ -4,11 +4,8 @@ namespace LogStore.Core
 open System.IO
 open System.Runtime.InteropServices
 open System.Security.Cryptography
-open System.Text.RegularExpressions
 open Microsoft.FSharp.NativeInterop
 open LogStore.Common.Utils
-
-type ValidFileName = ValidFileName of string
 
 type Chunk = {
     ChunkHeader: ChunkHeader
@@ -50,9 +47,6 @@ module Chunk =
 
     let buffer = Array.zeroCreate readBufferSize
 
-    let fileName (cfg: ChunkConfig) (index: int) =
-        Path.Combine (cfg.Path, sprintf "%s%0*i.lsc" cfg.Prefix cfg.Length index)
-
     let alignedSize dataSize =
         let size = ChunkHeader.size + dataSize + ChunkFooter.size
         let x = size % 4096L
@@ -75,16 +69,8 @@ module Chunk =
                 trans <| toRead - readBufferSize
         trans <| int32 count
 
-    let validateName (cfg: ChunkConfig) (input: string list) =
-        let pattern = sprintf "^%s\d{%i}\.lsc$" cfg.Prefix cfg.Length |> Regex
-        let select (elem: string) =
-            match elem with
-            | name when pattern.IsMatch (Path.GetFileName name) -> Some <| ValidFileName name
-            | _ -> None
-        input |> List.choose select
-
     let compare (cfg: ChunkConfig) (ValidFileName filename) (index: int) =
-        filename = fileName cfg index
+        filename = Naming.fileName cfg index
 
     let validateChecksum (chunk: Chunk) : bool =
         if not chunk.ChunkFooter.IsCompleted
@@ -126,7 +112,7 @@ module Chunk =
         let headerByte = header.AsByteArray
         let footer = ChunkFooter.Default
         let footerByte = footer.AsByteArray
-        let filename = fileName cfg index
+        let filename = Naming.fileName cfg index
         let tempFilename = sprintf @"%s.tmp" filename
         let tempFile = new FileStream (tempFilename, FileMode.CreateNew, FileAccess.Write, FileShare.None)
         tempFile.SetLength <| alignedSize cfg.ChunkSize
@@ -147,8 +133,9 @@ module Chunk =
         { ChunkHeader = ch; FileName = filename; OriginStream = os; ChunkFooter = cf }
 
     let create (cfg: ChunkConfig) : unit =
-        if Directory.Exists cfg.Path |> not then failwithf "初始化Chunk库异常：文件夹%s不存在。" cfg.Path
-        if (Directory.GetFiles cfg.Path).Length <> 0 then failwithf "初始化Chunk库异常：%s中已有文件。" cfg.Path
+        let path = Path.Combine (cfg.Path, cfg.Folder)
+        if Directory.Exists path |> not then failwithf "初始化Chunk库异常：文件夹%s不存在。" path
+        if (Directory.GetFiles path).Length <> 0 then failwithf "初始化Chunk库异常：%s中已有文件。" path
         internalCreate cfg 0 |> ignore
 
     //#endregion
